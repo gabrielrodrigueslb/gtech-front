@@ -6,6 +6,12 @@ import {
   getPipelines,
   createPipeline as createPipelineService,
 } from '@/lib/pipeline';
+import {
+  createOpportunity,
+  getOpportunities,
+  updateOpportunity as updateOpportunityService,
+  deleteOpportunity as deleteOpportunityService,
+} from '@/lib/opportunity';
 import { useCRM, type Deal } from '@/context/crm-context';
 
 export default function Deals() {
@@ -21,14 +27,17 @@ export default function Deals() {
   } = useCRM();
 
   // --- ESTADOS GERAIS ---
-  const [activeFunnelId, setActiveFunnelId] = useState(funnels[0]?.id || '1');
+  // Iniciamos vazio para esperar o carregamento dos funis
+  const [activeFunnelId, setActiveFunnelId] = useState<string>('');
+
   const [showModal, setShowModal] = useState(false);
   const [showFunnelModal, setShowFunnelModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  
-  // Drag and Drop do KANBAN (Cards)
+
+  // --- DRAG AND DROP (KANBAN CARDS) ---
   const [draggedDeal, setDraggedDeal] = useState<string | null>(null);
   const [dragSource, setDragSource] = useState<{
     stageId: string;
@@ -45,71 +54,139 @@ export default function Deals() {
     expectedClose: '',
   });
 
-  // --- NOVOS ESTADOS PARA O MODAL DE FUNIL (PIPELINE) ---
+  // --- ESTADOS DO MODAL DE FUNIL (PIPELINE) ---
   const [funnelName, setFunnelName] = useState('');
-
-  // Lista temporária de etapas sendo criadas
-  const [funnelStages, setFunnelStages] = useState<{name: string, color: string}[]>([
+  const [funnelStages, setFunnelStages] = useState<
+    { name: string; color: string }[]
+  >([
     { name: 'Lead', color: '#F59E0B' },
     { name: 'Negociação', color: '#8B5CF6' },
-    { name: 'Fechado', color: '#10B981' }
+    { name: 'Fechado', color: '#10B981' },
   ]);
-  
-  // Estado para controlar o Drag and Drop das ETAPAS no modal
-  const [draggedStageIndex, setDraggedStageIndex] = useState<number | null>(null);
 
-  // Inputs para adicionar uma nova etapa na lista
+  // Drag and Drop (Stages Creation)
+  const [draggedStageIndex, setDraggedStageIndex] = useState<number | null>(
+    null,
+  );
+
+  // Inputs para adicionar etapa
   const [newStageName, setNewStageName] = useState('');
   const [newStageColor, setNewStageColor] = useState('#6366F1');
 
   // Cores sugeridas
-  const PRESET_COLORS = ['#F59E0B', '#3B82F6', '#10B981', '#8B5CF6', '#06B6D4', '#EC4899', '#6366F1'];
+  const PRESET_COLORS = [
+    '#F59E0B',
+    '#3B82F6',
+    '#10B981',
+    '#8B5CF6',
+    '#06B6D4',
+    '#EC4899',
+    '#6366F1',
+  ];
 
-  // --- CARREGAMENTO INICIAL ---
+  // --------------------------------------------------------
+  // 1. CARREGAMENTO INICIAL (FUNIS)
+  // --------------------------------------------------------
   useEffect(() => {
     async function loadFunnels() {
       try {
         const data = await getPipelines();
-        console.log('Funis vindos do Back-end:', data);
+        console.log('Funis vindos do Back-end:', data); //
 
         if (data && data.length > 0) {
+          // 1. Atualiza o Contexto com os funis do banco
           data.forEach((pipeline: any) => {
-            // Verifica se já não existe no contexto
             const exists = funnels.find((f) => f.id === pipeline.id);
             if (!exists) {
               addFunnel({
                 id: pipeline.id,
                 name: pipeline.name,
-                stages: pipeline.stages || [], 
+                stages: pipeline.stages || [],
               });
             }
           });
+
+          // 2. Define o primeiro funil como ativo se não tiver nenhum selecionado
+          if (!activeFunnelId) {
+            setActiveFunnelId(data[0].id);
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
+        // --- CORREÇÃO AQUI ---
+        // Se o erro for 403 (Proibido) ou 401 (Não autorizado), nós ignoramos silenciosamente.
+        // Isso evita o erro vermelho no console quando o usuário ainda não logou.
+        if (
+          error.response &&
+          (error.response.status === 403 || error.response.status === 401)
+        ) {
+          return;
+        }
+
+        // Apenas erros reais de sistema (500, rede, etc) serão mostrados
         console.error('Erro ao carregar funis:', error);
       }
     }
-
     loadFunnels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --------------------------------------------------------
+  // 2. CARREGAMENTO DE OPORTUNIDADES (QUANDO MUDA O FUNIL)
+  // --------------------------------------------------------
+  useEffect(() => {
+    async function fetchDeals() {
+      if (!activeFunnelId) return;
+
+      try {
+        // Busca oportunidades do funil ativo na API
+        const remoteDeals = await getOpportunities(activeFunnelId);
+
+        // Mapeia do formato do Backend (amount, dueDate) para o formato do Contexto (value, expectedClose)
+        remoteDeals.forEach((d: any) => {
+          // Verifica duplicação visual no contexto
+          const exists = deals.find((localDeal) => localDeal.id === d.id);
+
+          if (!exists) {
+            addDeal({
+              id: d.id,
+              title: d.title,
+              description: d.description,
+              value: d.amount || 0, // Backend manda 'amount'
+              probability: d.probability,
+              contactId: d.contacts?.[0]?.id || '', // Pega o primeiro contato vinculado
+              stage: d.stageId || d.stage?.id, // Backend manda stageId ou objeto stage
+              funnelId: d.pipelineId,
+              expectedClose: d.dueDate ? new Date(d.dueDate) : new Date(),
+              createdAt: new Date(d.createdAt),
+            } as any);
+          }
+        });
+      } catch (error) {
+        console.error('Erro ao buscar oportunidades:', error);
+      }
+    }
+
+    fetchDeals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFunnelId]);
+
   const activeFunnel = funnels.find((f) => f.id === activeFunnelId);
   const funnelDeals = deals.filter((d) => d.funnelId === activeFunnelId);
 
-  // --- LÓGICA DO MODAL DE FUNIL (ADD/REMOVE/REORDER ETAPAS) ---
-
+  // --------------------------------------------------------
+  // AÇÕES DE PIPELINE (CRIAR/ESTÁGIOS/DRAG-DROP ETAPAS)
+  // --------------------------------------------------------
   const handleAddStage = (e: React.MouseEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     if (!newStageName.trim()) return;
-
     setFunnelStages([
-      ...funnelStages, 
-      { name: newStageName, color: newStageColor }
+      ...funnelStages,
+      { name: newStageName, color: newStageColor },
     ]);
-    
     setNewStageName('');
-    setNewStageColor(PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]);
+    setNewStageColor(
+      PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)],
+    );
   };
 
   const handleRemoveStage = (index: number) => {
@@ -118,74 +195,171 @@ export default function Deals() {
     setFunnelStages(newStages);
   };
 
-  // Funções de Drag and Drop para as Etapas
-  const handleStageDragStart = (index: number) => {
-    setDraggedStageIndex(index);
-  };
-
-  const handleStageDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Necessário para permitir o drop
-  };
-
+  // Drag and Drop das ETAPAS (na criação do funil)
+  const handleStageDragStart = (index: number) => setDraggedStageIndex(index);
+  const handleStageDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleStageDrop = (targetIndex: number) => {
     if (draggedStageIndex === null || draggedStageIndex === targetIndex) return;
-
     const newStages = [...funnelStages];
     const itemToMove = newStages[draggedStageIndex];
-
-    // Remove da posição antiga e insere na nova
     newStages.splice(draggedStageIndex, 1);
     newStages.splice(targetIndex, 0, itemToMove);
-
     setFunnelStages(newStages);
     setDraggedStageIndex(null);
   };
 
   const handleFunnelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!funnelName.trim()) {
-      alert("O nome do funil é obrigatório");
-      return;
-    }
-
-    if (funnelStages.length === 0) {
-      alert("Adicione pelo menos uma etapa ao funil");
-      return;
-    }
+    if (!funnelName.trim()) return alert('Nome do funil é obrigatório');
+    if (funnelStages.length === 0)
+      return alert('Adicione pelo menos uma etapa');
 
     try {
-      // O backend já usa a ordem do array para definir o campo 'order'
-      const newPipeline = await createPipelineService(
-        funnelName,
-        funnelStages 
-      );
-
-      console.log('Pipeline criado:', newPipeline);
+      const newPipeline = await createPipelineService(funnelName, funnelStages);
 
       addFunnel({
         id: newPipeline.id,
         name: newPipeline.name,
-        stages: newPipeline.stages, 
+        stages: newPipeline.stages,
       });
 
       setShowFunnelModal(false);
       setFunnelName('');
       setFunnelStages([
         { name: 'Lead', color: '#F59E0B' },
-        { name: 'Fechado', color: '#10B981' }
+        { name: 'Fechado', color: '#10B981' },
       ]);
       setActiveFunnelId(newPipeline.id);
-
       alert('Funil criado com sucesso!');
     } catch (error: any) {
-      console.error(error);
       alert(error.response?.data?.error || 'Erro ao criar funil');
     }
   };
 
-  // --- LÓGICA DE MANIPULAÇÃO DE DEALS (MODAIS E SUBMITS) ---
+  // --------------------------------------------------------
+  // AÇÕES DE OPORTUNIDADE (CRIAR/EDITAR/MOVER/DELETAR)
+  // --------------------------------------------------------
 
+  // Salvar (Criar ou Editar)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Pega o estágio inicial do funil atual se for criação
+    const currentStageId = activeFunnel?.stages[0]?.id;
+
+    if (!activeFunnelId || (!editingDeal && !currentStageId)) {
+      alert('Erro: Funil ou Estágio não identificados.');
+      return;
+    }
+
+    try {
+      if (editingDeal) {
+        // --- EDITAR ---
+        await updateOpportunityService(editingDeal.id, {
+          title: formData.title,
+          description: formData.description,
+          amount: Number(formData.value),
+          probability: Number(formData.probability),
+          dueDate: formData.expectedClose,
+          contactId: formData.contactId,
+        });
+
+        // Atualiza contexto visual
+        updateDeal(editingDeal.id, {
+          title: formData.title,
+          description: formData.description,
+          value: Number(formData.value),
+          probability: Number(formData.probability),
+          contactId: formData.contactId,
+          expectedClose: new Date(formData.expectedClose),
+        });
+      } else {
+        // --- CRIAR ---
+        const newDeal = await createOpportunity({
+          title: formData.title,
+          description: formData.description,
+          amount: Number(formData.value),
+          probability: Number(formData.probability),
+          pipelineId: activeFunnelId,
+          stageId: currentStageId!,
+          contactId: formData.contactId,
+          dueDate: formData.expectedClose,
+        });
+
+        // Adiciona ao contexto visual
+        addDeal({
+          id: newDeal.id,
+          title: newDeal.title,
+          description: newDeal.description,
+          value: newDeal.amount,
+          probability: newDeal.probability,
+          contactId: newDeal.contacts?.[0]?.id || formData.contactId,
+          stage: newDeal.stageId || currentStageId,
+          funnelId: newDeal.pipelineId,
+          expectedClose: new Date(newDeal.dueDate),
+          createdAt: new Date(),
+        } as any);
+      }
+
+      setShowModal(false);
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || 'Erro ao salvar oportunidade');
+    }
+  };
+
+  // Drag and Drop de Cards (Kanban)
+  const handleDragStart = (dealId: string, stageId: string) => {
+    setDraggedDeal(dealId);
+    setDragSource({ stageId, funnelId: activeFunnelId });
+  };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (targetStageId: string) => {
+    if (draggedDeal && dragSource) {
+      // 1. Atualização Otimista no Front (Move visualmente na hora)
+      moveDeal(draggedDeal, targetStageId, activeFunnelId);
+
+      // 2. Chama API para salvar
+      try {
+        await updateOpportunityService(draggedDeal, {
+          stageId: targetStageId,
+        });
+      } catch (error) {
+        console.error('Erro ao mover card:', error);
+        alert('Erro ao salvar movimento. Recarregue a página.');
+      }
+
+      setDraggedDeal(null);
+      setDragSource(null);
+    }
+  };
+
+  // Excluir Oportunidade
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir?')) return;
+
+    try {
+      await deleteOpportunityService(id);
+      deleteDeal(id); // Remove do contexto visual
+      setShowDetailsModal(false);
+      setShowModal(false);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao excluir.');
+    }
+  };
+
+  // --- HELPER FUNCTIONS ---
+  const getStageDeals = (stageId: string) =>
+    funnelDeals.filter((d) => d.stage === stageId);
+  const getStageTotal = (stageId: string) =>
+    getStageDeals(stageId).reduce((acc, d) => acc + d.value, 0);
+
+  // Abertura de Modais
   const openModal = (deal?: Deal) => {
     if (deal) {
       setEditingDeal(deal);
@@ -217,62 +391,11 @@ export default function Deals() {
   };
 
   const openEditModal = (deal: Deal) => {
-    setEditingDeal(deal);
-    setFormData({
-      title: deal.title,
-      description: deal.description || '',
-      value: deal.value,
-      contactId: deal.contactId,
-      probability: deal.probability,
-      expectedClose: new Date(deal.expectedClose).toISOString().split('T')[0],
-    });
+    openModal(deal); // Reutiliza a lógica de abrir modal de edição
     setShowDetailsModal(false);
-    setShowModal(true);
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const dealData = {
-      ...formData,
-      stage: activeFunnel?.stages[0].id || 'lead',
-      funnelId: activeFunnelId,
-      expectedClose: new Date(formData.expectedClose),
-    };
-    if (editingDeal) {
-      updateDeal(editingDeal.id, dealData);
-    } else {
-      addDeal(dealData);
-    }
-    setShowModal(false);
-  };
-
-  // --- DRAG AND DROP (KANBAN) ---
-
-  const handleDragStart = (dealId: string, stageId: string) => {
-    setDraggedDeal(dealId);
-    setDragSource({ stageId, funnelId: activeFunnelId });
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (stageId: string) => {
-    if (draggedDeal && dragSource) {
-      moveDeal(draggedDeal, stageId, activeFunnelId);
-      setDraggedDeal(null);
-      setDragSource(null);
-    }
-  };
-
-  const getStageDeals = (stageId: string) =>
-    funnelDeals.filter((d) => d.stage === stageId);
-  const getStageTotal = (stageId: string) =>
-    getStageDeals(stageId).reduce((acc, d) => acc + d.value, 0);
 
   // --- RENDER ---
-
   return (
     <div>
       <header className="mb-5">
@@ -283,12 +406,12 @@ export default function Deals() {
         </div>
 
         <div className="flex gap-2 justify-between pb-2 w-full">
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2">
             {funnels.map((funnel) => (
               <button
                 key={funnel.id}
                 onClick={() => setActiveFunnelId(funnel.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
                   activeFunnelId === funnel.id
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-foreground hover:bg-muted'
@@ -299,14 +422,13 @@ export default function Deals() {
             ))}
             <button
               onClick={() => setShowFunnelModal(true)}
-              className="px-4 py-2 rounded-lg font-medium bg-secondary text-foreground hover:bg-muted transition-all whitespace-nowrap cursor-pointer"
+              className="px-4 py-2 rounded-lg font-medium bg-secondary text-foreground hover:bg-muted transition-all whitespace-nowrap"
             >
               + Novo Funil
             </button>
           </div>
-
           <button
-            className="btn btn-primary cursor-pointer"
+            className="btn btn-primary whitespace-nowrap"
             onClick={() => openModal()}
           >
             + Nova Oportunidade
@@ -316,7 +438,7 @@ export default function Deals() {
 
       {/* --- KANBAN BOARD --- */}
       {activeFunnel && (
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-200px)]">
           {activeFunnel.stages.map((stage) => {
             const stageDealsList = getStageDeals(stage.id);
             const stageTotal = getStageTotal(stage.id);
@@ -324,7 +446,7 @@ export default function Deals() {
             return (
               <div
                 key={stage.id}
-                className="kanban-column shrink-0"
+                className="kanban-column shrink-0 w-80 flex flex-col"
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(stage.id)}
               >
@@ -344,7 +466,7 @@ export default function Deals() {
                   R$ {stageTotal.toLocaleString()}
                 </p>
 
-                <div className="flex flex-col gap-3 min-h-96">
+                <div className="flex flex-col gap-3 overflow-y-auto pr-2 pb-10 flex-1">
                   {stageDealsList.map((deal) => {
                     const contact = contacts.find(
                       (c) => c.id === deal.contactId,
@@ -405,7 +527,7 @@ export default function Deals() {
         </div>
       )}
 
-      {/* --- MODAL DETALHES DA OPORTUNIDADE --- */}
+      {/* --- MODAL DETALHES --- */}
       {showDetailsModal && selectedDeal && (
         <div
           className="modal-overlay"
@@ -421,7 +543,7 @@ export default function Deals() {
                 </p>
               </div>
               <button
-                className="text-muted-foreground hover:text-foreground transition-colors text-2xl"
+                className="text-muted-foreground hover:text-foreground transition-colors text-2xl select-none cursor-pointer"
                 onClick={() => setShowDetailsModal(false)}
               >
                 ✕
@@ -483,18 +605,6 @@ export default function Deals() {
                 </div>
               )}
 
-              <div>
-                <p className="text-xs text-muted-foreground mb-3 font-medium">
-                  PROBABILIDADE
-                </p>
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${selectedDeal.probability}%` }}
-                  />
-                </div>
-              </div>
-
               <div className="flex gap-3 pt-4 border-t">
                 <button
                   className="btn btn-secondary flex-1"
@@ -510,10 +620,7 @@ export default function Deals() {
                 </button>
                 <button
                   className="btn btn-ghost text-destructive"
-                  onClick={() => {
-                    deleteDeal(selectedDeal.id);
-                    setShowDetailsModal(false);
-                  }}
+                  onClick={() => handleDelete(selectedDeal.id)}
                 >
                   Excluir
                 </button>
@@ -534,10 +641,7 @@ export default function Deals() {
               {editingDeal && (
                 <button
                   className="btn btn-ghost text-destructive"
-                  onClick={() => {
-                    deleteDeal(editingDeal.id);
-                    setShowModal(false);
-                  }}
+                  onClick={() => handleDelete(editingDeal.id)}
                 >
                   Excluir
                 </button>
@@ -616,7 +720,7 @@ export default function Deals() {
                   onChange={(e) =>
                     setFormData({ ...formData, contactId: e.target.value })
                   }
-                  required
+                  
                 >
                   <option value="">Selecione um contato</option>
                   {contacts.map((c) => (
@@ -657,7 +761,7 @@ export default function Deals() {
         </div>
       )}
 
-      {/* --- MODAL NOVO FUNIL (ATUALIZADO COM DRAG & DROP) --- */}
+      {/* --- MODAL NOVO FUNIL (COM DRAG & DROP) --- */}
       {showFunnelModal && (
         <div
           className="modal-overlay"
@@ -665,9 +769,8 @@ export default function Deals() {
         >
           <div className="modal max-w-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-xl font-bold mb-4">Novo Funil de Vendas</h2>
-            
+
             <form onSubmit={handleFunnelSubmit} className="flex flex-col gap-6">
-              
               {/* === NOME DO FUNIL === */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -688,41 +791,46 @@ export default function Deals() {
                 <label className="block text-sm font-bold mb-3">
                   Configurar Etapas
                 </label>
-                
+
                 {/* Lista de Etapas (Arrastável) */}
                 <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                   {funnelStages.map((stage, index) => (
-                    <div 
-                      key={index} 
-                      
+                    <div
+                      key={index}
                       // --- LÓGICA DE DRAG AND DROP ---
                       draggable
                       onDragStart={() => handleStageDragStart(index)}
                       onDragOver={handleStageDragOver}
                       onDrop={() => handleStageDrop(index)}
                       // -------------------------------
-                      
+
                       className={`flex items-center gap-3 bg-background p-2 rounded-lg border shadow-sm cursor-move transition-all ${
-                        draggedStageIndex === index ? 'opacity-50 border-dashed border-primary' : 'hover:border-primary/50'
+                        draggedStageIndex === index
+                          ? 'opacity-50 border-dashed border-primary'
+                          : 'hover:border-primary/50'
                       }`}
                     >
                       {/* Ícone de "Grip" */}
-                      <span className="text-muted-foreground/50 text-xs select-none">⋮⋮</span>
+                      <span className="text-muted-foreground/50 text-xs select-none">
+                        ⋮⋮
+                      </span>
 
                       {/* Bolinha da cor */}
-                      <div 
-                        className="w-4 h-4 rounded-full shrink-0 border border-gray-200" 
-                        style={{ backgroundColor: stage.color }} 
+                      <div
+                        className="w-4 h-4 rounded-full shrink-0 border border-gray-200"
+                        style={{ backgroundColor: stage.color }}
                       />
-                      
+
                       {/* Nome da Etapa */}
-                      <span className="flex-1 font-medium text-sm select-none">{stage.name}</span>
-                      
+                      <span className="flex-1 font-medium text-sm select-none">
+                        {stage.name}
+                      </span>
+
                       {/* Botão Remover */}
                       <button
                         type="button"
                         onClick={(e) => {
-                          e.stopPropagation(); 
+                          e.stopPropagation();
                           handleRemoveStage(index);
                         }}
                         className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors cursor-pointer"
@@ -732,7 +840,7 @@ export default function Deals() {
                       </button>
                     </div>
                   ))}
-                  
+
                   {funnelStages.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-2">
                       Nenhuma etapa definida. Adicione abaixo.
@@ -757,20 +865,24 @@ export default function Deals() {
                       }}
                     />
                   </div>
-                  
+
                   {/* Seletor de Cor */}
                   <div className="flex gap-1 bg-background p-1 rounded-lg border items-center">
-                    {PRESET_COLORS.slice(0, 3).map(color => (
-                       <button
-                         key={color}
-                         type="button"
-                         onClick={() => setNewStageColor(color)}
-                         className={`w-5 h-5 rounded-full transition-transform ${newStageColor === color ? 'scale-125 ring-2 ring-offset-1 ring-primary' : 'opacity-70 hover:opacity-100'}`}
-                         style={{ backgroundColor: color }}
-                       />
+                    {PRESET_COLORS.slice(0, 3).map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewStageColor(color)}
+                        className={`w-5 h-5 rounded-full transition-transform ${
+                          newStageColor === color
+                            ? 'scale-125 ring-2 ring-offset-1 ring-primary'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
                     ))}
-                    <input 
-                      type="color" 
+                    <input
+                      type="color"
                       value={newStageColor}
                       onChange={(e) => setNewStageColor(e.target.value)}
                       className="w-6 h-6 rounded-full overflow-hidden cursor-pointer border-0 p-0 ml-1"
@@ -779,7 +891,7 @@ export default function Deals() {
                   </div>
 
                   <button
-                    type="button" 
+                    type="button"
                     onClick={handleAddStage}
                     className="h-9 px-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                   >
