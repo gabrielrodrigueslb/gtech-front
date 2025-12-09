@@ -16,7 +16,7 @@ export async function loginRequest({
   email,
   password,
 }: loginRequestParams): Promise<LoginResponse> {
-  const res = await fetch('http://localhost:3333/api/auth/login', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -34,8 +34,12 @@ export async function loginRequest({
 }
 
 export async function getMe() {
-  const res = await fetch('http://localhost:3333/api/auth/me', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
     credentials: 'include',
+    headers: {
+      'x-api-key': `${process.env.NEXT_PUBLIC_API_KEY}`,
+
+    },
   });
 
   if (!res.ok) {
