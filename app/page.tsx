@@ -1,12 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginRequest } from '@/lib/auth';
+import { getMe, loginRequest } from '@/lib/auth';
 
 export default function Login() {
   const router = useRouter();
 
+   useEffect(() => {
+      async function checkAuth() {
+        try {
+          const me = await getMe();
+  
+          if (!me) {
+            router.push('/');
+            return;
+          }
+  
+          router.push('/main');
+        } catch {
+          router.push('/');
+        }
+      }
+  
+      checkAuth();
+    }, [router]);
+  
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
