@@ -8,9 +8,8 @@ import "../styles/globals.scss"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CRM Pro - Customer Relationship Management",
-  description: "A fully customizable CRM system built with Next.js",
-  generator: "v0.app",
+  title: "Lintra Tech - CRM",
+  description: "Sistema de CRM interno da Lintra Tech",
   icons: {
     icon: [
       {
