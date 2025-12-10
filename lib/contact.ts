@@ -17,6 +17,11 @@ export async function getContacts() {
   const { data } = await api.get('/contacts');
   return data;
 }
+// Buscar contato por ID
+export async function getContactById(id: string) {
+  const { data } = await api.get(`/contacts/${id}`);
+  return data;
+}
 
 // Criar contato
 export async function createContact(data: Partial<Contact>) {

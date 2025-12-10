@@ -57,10 +57,10 @@ export default function CRMApp() {
         return <Contacts />;
       case 'deals':
         return <Deals />;
-      case 'tasks':
+/*       case 'tasks':
         return <Tasks />;
       case 'analytics':
-        return <Analytics />;
+        return <Analytics />; */
       default:
         return <Dashboard />;
     }
@@ -89,7 +89,7 @@ export default function CRMApp() {
   return (
     <CRMProvider>
       <div className="flex min-h-screen gap-2">
-        <main className=" flex-1 px-6 py-2 flex flex-col min-h-full w-full max-h-screen overflow-auto sm:overflow-hidden">
+        <main className="flex-1 py-2 flex flex-col min-h-full w-full max-h-screen overflow-auto sm:overflow-hidden">
           <header className="flex justify-between pb-2 items-center">
             <div className="p-4">
               <div className="flex items-center justify-center">
@@ -139,9 +139,9 @@ export default function CRMApp() {
               </div>
             </div>
           </header>
-          <section className="flex sm:flex-row flex-col gap-4 h-full overflow-auto sm:overflow-hidden section-content">
+          <section className="flex sm:flex-row flex-col gap-4 h-full min-h-0 section-content">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            <div className="w-full">{renderContent()}</div>
+            <div className="w-screen max-w-screen px-2">{renderContent()}</div>
           </section>
         </main>
       </div>

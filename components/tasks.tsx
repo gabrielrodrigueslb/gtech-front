@@ -135,7 +135,7 @@ export default function Tasks() {
               style={{ opacity: task.status === "completed" ? 0.6 : 1 }}
             >
               <button
-                className="w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center mt-0.5"
+                className="w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center mt-0.5"
                 style={{
                   borderColor: task.status === "completed" ? "var(--color-success)" : "var(--color-border)",
                   backgroundColor: task.status === "completed" ? "var(--color-success)" : "transparent",

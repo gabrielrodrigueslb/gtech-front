@@ -19,9 +19,13 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
+html{
+  background: var(--color-background);
+  scroll-behavior: smooth;
+}
 
 body {
-  background: var(--color-background);
+
   color: var(--color-foreground);
   font-family: var(--font-sans);
   box-sizing: border-box;
@@ -246,14 +250,13 @@ body {
 }
 
 .kanban-column {
-  min-width: 300px;
+
   background-color: var(--color-card);
   border-radius: 12px;
   padding: 16px;
   border: 2px solid var(--color-border);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 500px;
-
+  
   &:hover {
     border-color: var(--color-primary);
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.1);
@@ -558,6 +561,8 @@ body {
     border: 1px solid var(--color-border);
     border-radius: 220px;
     position: fixed;
+    justify-content: center;
+    align-items: center;
     left: 0;
     right: 0;
     margin-inline: 20px;

@@ -15,8 +15,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: <LuLayoutDashboard /> },
     { id: 'contacts', label: 'Contatos', icon: <TiContacts /> },
     { id: 'deals', label: 'Negócios', icon: <MdLeaderboard /> },
-    { id: 'tasks', label: 'Tarefas', icon: <FaTasks /> },
-    { id: 'analytics', label: 'Relatórios', icon: <GoGraph /> },
+/*     { id: 'tasks', label: 'Tarefas', icon: <FaTasks /> },
+    { id: 'analytics', label: 'Relatórios', icon: <GoGraph /> }, */
   ];
 
   return (
