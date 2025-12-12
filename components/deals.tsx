@@ -13,13 +13,13 @@ import {
   deleteOpportunity as deleteOpportunityService,
 } from '@/lib/opportunity';
 import { getUsers, type User } from '@/lib/user';
-import { getContacts, type Contact as ContactType } from '@/lib/contact'; //
+import { getContacts, type Contact as ContactType } from '@/lib/contact';
 import { useCRM, type Deal } from '@/context/crm-context';
 
 export default function Deals() {
   const {
     deals,
-    funnels, // Mantemos funnels do contexto para sincronia visual
+    funnels,
     addDeal,
     updateDeal,
     deleteDeal,
@@ -38,18 +38,18 @@ export default function Deals() {
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
-  // --- DADOS REAIS (VINDOS DA API) ---
+  // --- DADOS REAIS ---
   const [users, setUsers] = useState<User[]>([]);
-  const [availableContacts, setAvailableContacts] = useState<ContactType[]>([]); // Contatos reais
+  const [availableContacts, setAvailableContacts] = useState<ContactType[]>([]);
 
-  // --- DRAG AND DROP (KANBAN CARDS) ---
+  // --- DRAG AND DROP ---
   const [draggedDeal, setDraggedDeal] = useState<string | null>(null);
   const [dragSource, setDragSource] = useState<{
     stageId: string;
     funnelId: string;
   } | null>(null);
 
-  // --- ESTADOS DO FORMULÁRIO DE OPORTUNIDADE (DEAL) ---
+  // --- ESTADOS DO FORMULÁRIO ---
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -63,22 +63,21 @@ export default function Deals() {
     expectedClose: '',
   });
 
+  // --- HELPER: FORMATAÇÃO TELEFONE (REGEX) ---
   const formatPhoneNumber = (value: string) => {
     // 1. Remove tudo que não é número
     const numbers = value.replace(/\D/g, '');
 
-    // 2. Limita a 11 dígitos (DDD + 9 dígitos)
+    // 2. Limita a 11 dígitos
     const limited = numbers.substring(0, 11);
 
     // 3. Aplica a máscara
-    // Se tiver mais que 10 dígitos, é celular: (99) 99999-9999
-    // Se não, é fixo: (99) 9999-9999
     return limited
-      .replace(/^(\d{2})(\d)/g, '($1) $2') // Coloca parênteses em volta dos dois primeiros dígitos
-      .replace(/(\d)(\d{4})$/, '$1-$2'); // Coloca hífen antes dos últimos 4 dígitos
+      .replace(/^(\d{2})(\d)/g, '($1) $2')
+      .replace(/(\d)(\d{4})$/, '$1-$2');
   };
 
-  // --- ESTADOS DO MODAL DE FUNIL (PIPELINE) ---
+  // --- ESTADOS DO FUNIL ---
   const [funnelName, setFunnelName] = useState('');
   const [funnelStages, setFunnelStages] = useState<
     { name: string; color: string }[]
@@ -104,25 +103,20 @@ export default function Deals() {
     '#6366F1',
   ];
 
-  // --------------------------------------------------------
-  // 1. CARREGAMENTO INICIAL (PARALELO: FUNIS, USERS, CONTACTS)
-  // --------------------------------------------------------
+  // --- CARREGAMENTO INICIAL ---
   useEffect(() => {
     async function loadAllData() {
       setIsLoading(true);
       try {
-        // Busca tudo de uma vez para performance
         const [funnelsData, usersData, contactsData] = await Promise.all([
           getPipelines(),
           getUsers(),
           getContacts(),
         ]);
 
-        // Define estados locais de dados auxiliares
         setUsers(usersData || []);
         setAvailableContacts(contactsData || []);
 
-        // Processa Funis
         let initialFunnelId = '';
         if (funnelsData && funnelsData.length > 0) {
           console.log('Dados carregados:', {
@@ -144,7 +138,6 @@ export default function Deals() {
           setActiveFunnelId(initialFunnelId);
         }
 
-        // Se tivermos um funil, buscamos as oportunidades dele IMEDIATAMENTE
         if (initialFunnelId) {
           const remoteDeals = await getOpportunities(initialFunnelId);
           processRemoteDeals(remoteDeals);
@@ -166,9 +159,6 @@ export default function Deals() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --------------------------------------------------------
-  // 2. TROCA DE FUNIL (Busca apenas oportunidades)
-  // --------------------------------------------------------
   const processRemoteDeals = (remoteDeals: any[]) => {
     remoteDeals.forEach((d: any) => {
       const exists = deals.find((localDeal) => localDeal.id === d.id);
@@ -181,9 +171,9 @@ export default function Deals() {
           probability: d.probability,
           contactId: d.contacts?.[0]?.id || '',
           ownerId: d.owner?.id,
-          website:d.website,
-          contactNumber:d.contactNumber,
-          address:d.address,
+          website: d.website,
+          contactNumber: d.contactNumber, // Vem do banco (pode vir sujo ou limpo, ideal tratar se necessário)
+          address: d.address,
           owner: d.owner,
           stage: d.stageId || d.stage?.id,
           funnelId: d.pipelineId,
@@ -213,9 +203,7 @@ export default function Deals() {
   const activeFunnel = funnels.find((f) => f.id === activeFunnelId);
   const funnelDeals = deals.filter((d) => d.funnelId === activeFunnelId);
 
-  // --------------------------------------------------------
-  // HELPER UI
-  // --------------------------------------------------------
+  // --- HELPERS UI ---
   const renderUserAvatar = (
     name: string,
     size = 'w-6 h-6',
@@ -232,9 +220,7 @@ export default function Deals() {
     );
   };
 
-  // --------------------------------------------------------
-  // MANIPULADORES (HANDLERS)
-  // --------------------------------------------------------
+  // --- HANDLERS (PIPELINE) ---
   const handleAddStage = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!newStageName.trim()) return;
@@ -292,6 +278,7 @@ export default function Deals() {
     }
   };
 
+  // --- HANDLERS (OPPORTUNITY) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const currentStageId = activeFunnel?.stages[0]?.id;
@@ -309,13 +296,13 @@ export default function Deals() {
           amount: Number(formData.value),
           probability: Number(formData.probability),
           website: formData.website,
-          contactNumber: formData.contactNumber,
+          contactNumber: formData.contactNumber.replace(/\D/g, ''), // LIMPA ANTES DE SALVAR
           address: formData.address,
           dueDate: formData.expectedClose,
           contactId: formData.contactId,
           ownerId: formData.ownerId,
-          stageId: editingDeal.stage, // <-- ADD
-          pipelineId: editingDeal.funnelId, // <-- ADD
+          stageId: editingDeal.stage,
+          pipelineId: editingDeal.funnelId,
         });
 
         const newOwner = users.find((u) => u.id === formData.ownerId);
@@ -326,6 +313,9 @@ export default function Deals() {
           value: Number(formData.value),
           probability: Number(formData.probability),
           contactId: formData.contactId,
+          website: formData.website,
+          contactNumber: formData.contactNumber.replace(/\D/g, ''),
+          address: formData.address,
           expectedClose: new Date(formData.expectedClose),
           // @ts-ignore
           ownerId: formData.ownerId,
@@ -337,6 +327,9 @@ export default function Deals() {
           description: formData.description,
           amount: Number(formData.value),
           probability: Number(formData.probability),
+          website: formData.website,
+          contactNumber: formData.contactNumber.replace(/\D/g, ''),
+          address: formData.address,
           pipelineId: activeFunnelId,
           stageId: currentStageId!,
           contactId: formData.contactId,
@@ -355,6 +348,9 @@ export default function Deals() {
           contactId: newDeal.contacts?.[0]?.id || formData.contactId,
           stage: newDeal.stageId || currentStageId,
           funnelId: newDeal.pipelineId,
+          website: formData.website,
+          address: formData.address,
+          contactNumber: formData.contactNumber.replace(/\D/g, ''),
           expectedClose: new Date(newDeal.dueDate),
           createdAt: new Date(),
           // @ts-ignore
@@ -383,7 +379,7 @@ export default function Deals() {
       try {
         await updateOpportunityService(draggedDeal, {
           stageId: targetStageId,
-          pipelineId: activeFunnelId, // <--- O funil atual
+          pipelineId: activeFunnelId,
         });
       } catch (error) {
         console.error('Erro ao mover card:', error);
@@ -414,6 +410,10 @@ export default function Deals() {
   const openModal = (deal?: Deal) => {
     if (deal) {
       setEditingDeal(deal);
+      // Ao abrir para edição, se tiver número limpo, aplicamos a máscara para exibir bonito
+      const rawNumber = deal.contactNumber ?? '';
+      const formattedNumber = rawNumber ? formatPhoneNumber(rawNumber) : '';
+
       setFormData({
         title: deal.title,
         description: deal.description || '',
@@ -422,8 +422,7 @@ export default function Deals() {
         ownerId: deal.ownerId || deal.owner?.id || '',
         probability: deal.probability,
         expectedClose: new Date(deal.expectedClose).toISOString().split('T')[0],
-
-        contactNumber: deal.contactNumber ?? '',
+        contactNumber: formattedNumber, // Exibe formatado
         website: deal.website ?? '',
         address: deal.address ?? '',
       });
@@ -455,9 +454,6 @@ export default function Deals() {
     setShowDetailsModal(false);
   };
 
-  console.log(selectedDeal)
-
-  // --- RENDER ---
   return (
     <div className="w-full">
       <header className="mb-5">
@@ -470,8 +466,6 @@ export default function Deals() {
           <div className="flex gap-2">
             <select
               className="pipeline-options px-4 py-3 bg-(--color-card) text-md border-(--color-border) border-2 rounded-xl cursor-pointer outline-0 font-bold"
-              name="Pipelines"
-              id="pipelines"
               value={activeFunnelId}
               onChange={(e) => setActiveFunnelId(e.target.value)}
             >
@@ -536,13 +530,11 @@ export default function Deals() {
                 </p>
                 <div className="flex flex-col gap-3 overflow-y-auto pr-2 pb-10 flex-1">
                   {stageDealsList.map((deal) => {
-                    // USA O AVAILABLE CONTACTS (API) AO INVÉS DO CONTEXTO ANTIGO
                     const contact = availableContacts.find(
                       (c) => c.id === deal.contactId,
                     );
                     // @ts-ignore
                     const ownerName = deal.owner?.name;
-
                     return (
                       <div
                         key={deal.id}
@@ -690,9 +682,12 @@ export default function Deals() {
                   <p className="text-xs text-muted-foreground mb-1 font-medium">
                     NÚMERO DE CONTATO
                   </p>
+                  {/* Aqui formatamos apenas para exibição, se existir número */}
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
-                      {selectedDeal.contactNumber || '(00) 00000-0000'}
+                      {selectedDeal.contactNumber
+                        ? formatPhoneNumber(selectedDeal.contactNumber)
+                        : '(00) 00000-0000'}
                     </p>
                   </div>
                 </div>
@@ -701,11 +696,29 @@ export default function Deals() {
                     WEBSITE
                   </p>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">
-                      {selectedDeal.website || 'Sem website'}
+                    <p className="text-sm font-medium text-ellipsis mask-ellipse overflow-hidden decoration-0 ">
+                      {selectedDeal.website ? (
+                        <a
+                          href={
+                            selectedDeal.website.startsWith('http')
+                              ? selectedDeal.website
+                              : `${selectedDeal.website}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className=" hover:underline hover:text-blue-600 transition-colors"
+                        >
+                          {selectedDeal.website}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Sem website
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
+
                 <div className="bg-secondary p-4 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1 font-medium">
                     ENDEREÇO
@@ -713,7 +726,6 @@ export default function Deals() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
                       {selectedDeal.address || 'Sem endereço'}
-                      
                     </p>
                   </div>
                 </div>
@@ -812,7 +824,6 @@ export default function Deals() {
                   }
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -855,7 +866,6 @@ export default function Deals() {
                   <label className="block text-sm font-medium mb-2">
                     Contato
                   </label>
-                  {/* USA OS CONTATOS REAIS DA API */}
                   <select
                     className="input"
                     value={formData.contactId}
@@ -894,6 +904,7 @@ export default function Deals() {
                   <label className="block text-sm font-medium mb-2">
                     Número de contato
                   </label>
+                  {/* --- INPUT COM FORMATAÇÃO VISUAL --- */}
                   <input
                     type="text"
                     min="0"
@@ -902,7 +913,7 @@ export default function Deals() {
                     placeholder="(00) 00000-0000"
                     value={formData.contactNumber}
                     onChange={(e) => {
-                      const formatted = formatPhoneNumber(e.target.value);
+                      const formatted = formatPhoneNumber(e.target.value); // Aplica máscara visual
                       setFormData({ ...formData, contactNumber: formatted });
                     }}
                   />
@@ -917,10 +928,7 @@ export default function Deals() {
                     placeholder="https://site.com"
                     value={formData.website}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        website: e.target.value,
-                      })
+                      setFormData({ ...formData, website: e.target.value })
                     }
                   />
                 </div>
