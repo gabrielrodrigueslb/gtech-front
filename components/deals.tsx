@@ -12,7 +12,8 @@ import {
   updateOpportunity as updateOpportunityService,
   deleteOpportunity as deleteOpportunityService,
 } from '@/lib/opportunity';
-import { FaRegUser } from "react-icons/fa6";
+import { FaRegUser } from 'react-icons/fa6';
+import { GrView } from 'react-icons/gr';
 import { getUsers, type User } from '@/lib/user';
 import { getContacts, type Contact as ContactType } from '@/lib/contact';
 import { useCRM, type Deal } from '@/context/crm-context';
@@ -35,6 +36,7 @@ export default function Deals() {
   const [showModal, setShowModal] = useState(false);
   const [showFunnelModal, setShowFunnelModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDetailsContact, setShowDetailsContact] = useState(false);
 
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -455,6 +457,13 @@ export default function Deals() {
     setShowDetailsModal(false);
   };
 
+  // contato
+  function handleModalContact() {
+    setShowDetailsContact(!showDetailsContact);
+  }
+
+  console.log(selectedDeal);
+
   return (
     <div className="w-full">
       <header className="mb-5">
@@ -651,18 +660,32 @@ export default function Deals() {
                 </div>
               )}
               {selectedDeal.contactId && (
-                <div className=" p-3 
-                bg-secondary/30 rounded-lg border border-border flex gap-2">
-                  <div className='w-8 h-8 rounded-full bg-border text-secondary/30 flex justify-center items-center text-sm'> <FaRegUser /></div>
-                  <div> <p className="text-xs text-muted-foreground font-bold">
-                    CONTATO
-                  </p>
-                  <p className="text-sm font-medium">
-                    {availableContacts.find(
-                      (c) => c.id === selectedDeal.contactId,
-                    )?.name || 'Sem contato'}
-                  </p></div>
-                 
+                <div
+                  className=" p-3 
+                bg-secondary/30 rounded-lg border border-border flex  justify-between"
+                >
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded-full bg-border text-secondary/30 flex justify-center items-center text-sm">
+                      <FaRegUser />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-bold">
+                        CONTATO
+                      </p>
+                      <p className="text-sm font-medium">
+                        {availableContacts.find(
+                          (c) => c.id === selectedDeal.contactId,
+                        )?.name || 'Sem contato'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    className="w-8 h-8 rounded-lg bg-border text-secondary/30 flex justify-center items-center text-sm cursor-pointer hover:bg-card-hover transition-colors"
+                    onClick={handleModalContact}
+                  >
+                    <GrView />
+                  </button>
                 </div>
               )}
               {selectedDeal.description && (
@@ -735,7 +758,6 @@ export default function Deals() {
                       )}
                     </p>
                   </div>
-                  
                 </div>
                 <div className="bg-secondary p-4 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1 font-medium">
@@ -747,7 +769,7 @@ export default function Deals() {
                     </p>
                   </div>
                 </div>
-                 <div className="bg-secondary p-4 rounded-lg">
+                <div className="bg-secondary p-4 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-2 font-medium ">
                     PREVISÃO
                   </p>
@@ -758,7 +780,7 @@ export default function Deals() {
                   </p>
                 </div>
               </div>
-                                     
+
               <div className="flex gap-3 pt-4 border-t">
                 <button
                   className="btn btn-ghost text-destructive flex-1 hover:text-red-400"
@@ -1101,6 +1123,55 @@ export default function Deals() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* --- MODAL editar contato --- */}
+      {showDetailsContact && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Detalhes Contato</h2>
+
+              <button
+                className="text-muted-foreground hover:text-foreground transition-colors text-2xl select-none cursor-pointer"
+                onClick={handleModalContact}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className='p-2'>
+              <h3 className="block text-sm font-medium mb-2">Nome</h3>
+              <p className="text-sm font-medium">
+                {availableContacts.find((c) => c.id === selectedDeal?.contactId)
+                  ?.name || 'Sem nome'}
+              </p>
+            </div>
+            <div className='p-2'>
+              <h3 className="block text-sm font-medium mb-2">Telefone</h3>
+              <p className="text-sm font-medium">
+                {availableContacts.find((c) => c.id === selectedDeal?.contactId)
+                  ?.phone || 'Sem telefone'}
+              </p>
+            </div>
+
+            <div className='p-2'>
+              <h3 className="block text-sm font-medium mb-2">Email</h3>
+              <p className="text-sm font-medium">
+                {availableContacts.find((c) => c.id === selectedDeal?.contactId)
+                  ?.email || 'Sem email'}
+              </p>
+            </div>
+            <div className='p-2'>
+              <h3 className="block text-sm font-medium mb-2">Segmento</h3>
+              <p className="text-sm font-medium">
+                {availableContacts.find((c) => c.id === selectedDeal?.contactId)
+                  ?.segment || 'Sem segmento'}
+              </p>
+            </div>
+            </div>
+            
           </div>
         </div>
       )}
