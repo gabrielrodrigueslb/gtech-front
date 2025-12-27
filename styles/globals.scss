@@ -546,8 +546,11 @@ body {
   }
 }
 @media (max-width: 640px) {
+  .mobile{
+    display:block;
+  }
   .section-content {
-    padding-bottom: 90px;
+    padding-bottom: 140px;
   }
 
   .navbar {

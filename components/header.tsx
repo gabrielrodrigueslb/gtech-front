@@ -1,18 +1,10 @@
-'use client';
+'use client'
 
-import { useRouter } from 'next/navigation';
-import { useState, useRef, useEffect } from 'react';
-import Sidebar from '@/components/sidebar';
-import Dashboard from '@/components/dashboard';
-import Contacts from '@/components/contacts';
-import Deals from '@/components/deals';
-import Tasks from '@/components/tasks';
-import Analytics from '@/components/analytics';
-import { CRMProvider } from '@/context/crm-context';
-import { getMe } from '@/lib/auth';
+import { getMe } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
-export default function CRMApp() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -49,23 +41,6 @@ export default function CRMApp() {
     router.replace('/');
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'contacts':
-        return <Contacts />;
-      case 'deals':
-        return <Deals />;
-      case 'tasks':
-        return <Tasks />;
-      case 'analytics':
-        return <Analytics />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
@@ -87,22 +62,19 @@ export default function CRMApp() {
   }, []);
 
   return (
-    <CRMProvider>
-      <div className="flex min-h-screen gap-2">
-        <main className=" flex-1 px-6 py-2 flex flex-col min-h-full w-full max-h-screen overflow-auto sm:overflow-hidden">
-          <header className="flex justify-between pb-2 items-center">
-            <div className="p-4">
+    <header className="flex justify-between p-4 items-center">
+            <div className="px-4">
               <div className="flex items-center justify-center">
-                <div className="w-12 h-12 flex ">
+                <div className="w-20 h-auto flex ">
                   <img
                     className="w-full h-auto"
-                    src="/gtech.svg"
-                    alt="logo gtech"
+                    src="/logo_dark.png"
+                    alt="logo lintra"
                   />
                 </div>
               </div>
             </div>
-            <div className="user-infos flex items-center gap-4 ">
+            <div className="user-infos flex items-center gap-4 px-4">
               <span className="flex items-center justify-center h-full font-bold">
                 {user?.name}
               </span>
@@ -139,12 +111,5 @@ export default function CRMApp() {
               </div>
             </div>
           </header>
-          <section className="flex sm:flex-row flex-col gap-4 h-full overflow-auto sm:overflow-hidden section-content">
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            <div className="w-full">{renderContent()}</div>
-          </section>
-        </main>
-      </div>
-    </CRMProvider>
-  );
+  )
 }

@@ -28,7 +28,7 @@ export default function Login() {
 
   try {
     await loginRequest({email, password})
-    router.push('/main')
+    router.push('/main/dashboard')
   } catch (err) {
     if (err instanceof Error) {
       setError(err.message)
@@ -45,12 +45,7 @@ export default function Login() {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       {/* LADO ESQUERDO */}
-      <div className="hidden md:flex flex-col items-center justify-center  text-white p-10">
-        <h1 className="text-4xl font-bold mb-4">CRM Pro</h1>
-        <p className="text-center text-lg max-w-md">
-          Gerencie seus clientes, vendas e tarefas em um só lugar de forma
-          simples e eficiente.
-        </p>
+      <div className="hidden md:flex flex-col items-center justify-center  text-white p-10 bg-[url(/banner0lintra.png)] bg-no-repeat bg-cover bg-center">
       </div>
 
       {/* LADO DIREITO */}
@@ -70,7 +65,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="seu@email.com"
             />
           </div>
@@ -82,7 +77,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Senha"
             />
           </div>
@@ -98,7 +93,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-amber-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-60"
+            className="bg-primary text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-60 cursor-pointer" 
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
@@ -106,7 +101,7 @@ export default function Login() {
           {/* LINK EXTRA */}
           <div className="text-center text-sm text-gray-600">
             Esqueceu a senha?{' '}
-            <span className="text-amber-600 cursor-pointer hover:underline">
+            <span className="text-primary cursor-pointer hover:underline">
               Recuperar acesso
             </span>
           </div>

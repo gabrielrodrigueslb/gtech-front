@@ -4,37 +4,42 @@ import { TiContacts } from 'react-icons/ti';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { GoGraph } from "react-icons/go";
 import { FaTasks } from "react-icons/fa";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export default function Sidebar() {
+const pathname = usePathname()
+
+console.log(pathname)
+
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LuLayoutDashboard /> },
-    { id: 'contacts', label: 'Contatos', icon: <TiContacts /> },
-    { id: 'deals', label: 'Negócios', icon: <MdLeaderboard /> },
-    { id: 'tasks', label: 'Tarefas', icon: <FaTasks /> },
-    { id: 'analytics', label: 'Relatórios', icon: <GoGraph /> },
+    { id:1, path: '/main/dashboard', label: 'Dashboard', icon: <LuLayoutDashboard /> },
+    { id:2, path: '/main/contacts', label: 'Contatos', icon: <TiContacts /> },
+    { id:3, path: '/main/crm', label: 'Negócios', icon: <MdLeaderboard /> },
+    { id:4, path: '/main/tasks', label: 'Tarefas', icon: <FaTasks /> }
   ];
 
   return (
     <aside className=" flex flex-col gap-2 justify-center navbar">
       <nav className="flex-1 sm:p-3 p-1">
         <ul className="flex flex-row sm:flex-col gap-2 justify-between">
+
           {menuItems.map((item) => (
             <li key={item.id}>
-              <button
-                onClick={() => setActiveTab(item.id)}
+              <Link href={item.path}
                 className={`sidebar-link w-full flex items-center ${
-                  activeTab === item.id ? 'active' : ''
+                  pathname == item.path ? 'active' : ''
                 }`}
               >
-                <span className="text-xl flex justify-center items-center">
+                <span  className="text-xl flex justify-center items-center">
                   {item.icon}
                 </span>
-              </button>
+              </Link>
             </li>
           ))}
         </ul>
