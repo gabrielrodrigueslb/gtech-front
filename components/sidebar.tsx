@@ -20,8 +20,8 @@ console.log(pathname)
   const menuItems = [
     { id:1, path: '/main/dashboard', label: 'Dashboard', icon: <LuLayoutDashboard /> },
     { id:2, path: '/main/contacts', label: 'Contatos', icon: <TiContacts /> },
-    { id:3, path: '/main/clientes', label: 'Clientes', icon: <FaBuildingUser /> },
-    { id:4, path: '/main/crm', label: 'Negócios', icon: <MdLeaderboard /> },
+    { id:3, path: '/main/crm', label: 'Negócios', icon: <MdLeaderboard /> },
+    { id:4, path: '/main/clientes', label: 'Clientes', icon: <FaBuildingUser /> },
     { id:5, path: '/main/tasks', label: 'Tarefas', icon: <FaTasks /> }
   ];
 

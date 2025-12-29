@@ -1,4 +1,3 @@
-'use client';
 
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
@@ -12,7 +11,6 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
 };
-
 
 export default function MainLayout({
   children,
