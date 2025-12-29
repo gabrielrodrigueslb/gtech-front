@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   title: 'Lintra Tech - Painel',
   description: 'Sistema de CRM interno da Lintra Tech',
   manifest:'/manifest.json',
-  themeColor: "#3b82f6",
   icons: {
     icon: [
       { url: '/icon.png', media: '(prefers-color-scheme: light)' },
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#3b82f6",
+  themeColor: "linear-gradient(121.09deg, #11182b 0%, #280f0f 100%)",
   width:'device-width',
   initialScale:1,
   maximumScale:1,
