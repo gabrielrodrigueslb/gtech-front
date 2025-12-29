@@ -11,11 +11,11 @@ export const metadata: Metadata = {
   manifest:'/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon_light.png', media: '(prefers-color-scheme: light)' },
       { url: '/icon.png', media: '(prefers-color-scheme: dark)' },
       { url: '/icon.png', type: 'image/svg+xml' },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icon.png',
   },
 };
 
