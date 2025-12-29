@@ -7,6 +7,8 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Lintra Tech - Painel',
   description: 'Sistema de CRM interno da Lintra Tech',
+  manifest:'/manifest.json',
+  themeColor: "#3b82f6",
   icons: {
     icon: [
       { url: '/icon.png', media: '(prefers-color-scheme: light)' },
@@ -16,6 +18,14 @@ export const metadata: Metadata = {
     apple: '/apple-icon.png',
   },
 };
+
+export const viewport = {
+  themeColor: "#3b82f6",
+  width:'device-width',
+  initialScale:1,
+  maximumScale:1,
+  userScalable: false,
+}
 
 export default function RootLayout({
   children,
