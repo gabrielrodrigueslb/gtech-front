@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { PWARegister } from './pwa-register';
 import '../styles/globals.scss';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.className} antialiased`}>
+        <PWARegister/>
         {children}
       </body>
     </html>
