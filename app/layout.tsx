@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: 'linear-gradient(121.09deg, #11182b 0%, #280f0f 100%)',
+  themeColor: '#11182b',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
