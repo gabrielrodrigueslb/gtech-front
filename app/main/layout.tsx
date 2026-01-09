@@ -23,12 +23,12 @@ export default function MainLayout({
       <Header />
 
       {/* CONTEÚDO ABAIXO DO HEADER */}
-      <main className="flex flex-1 overflow-hidden min-h-0">
+      <main className="flex flex-1  min-h-0">
         {/* SIDEBAR */}
         <Sidebar />
 
         {/* ÁREA DAS PÁGINAS */}
-        <div className="flex-1 overflow-hidden min-h-0 p-4 section-content">
+        <div className="flex-1 overflow-auto min-h-0 p-4 section-content">
           <CRMProvider>{children}</CRMProvider>
         </div>
       </main>
