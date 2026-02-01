@@ -28,7 +28,7 @@ export default function Dashboard() {
   return (
     <div className="">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: "hsl(var(--foreground))" }}>
+        <h1 className="text-3xl font-bold mb-2 text-color-text" style={{ color: "hsl(var(--foreground))" }}>
           Dashboard
         </h1>
         <p style={{ color: "hsl(var(--muted-foreground))" }}>Visão geral do seu CRM</p>

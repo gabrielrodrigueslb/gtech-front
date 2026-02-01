@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* @custom-variant dark (&:is(.dark *));
+/*  @custom-variant dark (&:is(.dark *)); */
 
 :root {
   --background: linear-gradient(121.09deg, #11182B 0%, #280F0F 100%);
@@ -10,14 +10,14 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #0095ff;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent-foreground:rgb(28, 28, 28);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
@@ -39,7 +39,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+/* .dark {
   --background: linear-gradient(121.09deg, #11182B 0%, #280F0F 100%);
   --foreground: linear-gradient(121.09deg, #11182B 0%, #280F0F 100%);
   --card: oklch(0.145 0 0);
@@ -72,7 +72,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
-}
+} */
 
 @theme inline {
   --font-sans: 'Geist', 'Geist Fallback';
@@ -122,4 +122,4 @@
   body {
     @apply bg-background text-foreground;
   }
-} */
+}

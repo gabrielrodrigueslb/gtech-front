@@ -13,93 +13,86 @@ export default function Login() {
   const [error, setError] = useState('');
 
   async function handleLogin(e: React.FormEvent) {
-  e.preventDefault()
+    e.preventDefault();
 
-  if (loading) return
+    if (loading) return;
 
-  setError('')
-  setLoading(true)
+    setError('');
+    setLoading(true);
 
-  if (!email || !password) {
-    setError('Preencha todos os campos.')
-    setLoading(false)
-    return
-  }
-
-  try {
-    await loginRequest({email, password})
-    router.push('/main/dashboard')
-  } catch (err) {
-    if (err instanceof Error) {
-      setError(err.message)
-    } else {
-      setError('Erro inesperado ao tentar logar.')
+    if (!email || !password) {
+      setError('Preencha todos os campos.');
+      setLoading(false);
+      return;
     }
-  } finally {
-    setLoading(false)
+
+    try {
+      await loginRequest({ email, password });
+      router.push('/main/dashboard');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro inesperado ao tentar logar.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
-}
-
-
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* LADO ESQUERDO */}
-      <div className="hidden md:flex flex-col items-center justify-center  text-white p-10 bg-[url(/banner0lintra.png)] bg-no-repeat bg-cover bg-center">
-      </div>
+    <div className="min-h-screen flex w-screen bg-black/70">
+      <div className="flex items-center justify-center relative overflow-hidden w-full flex-col">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.35),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(036,72,220,0.25),transparent_55%)]" />
 
-      {/* LADO DIREITO */}
-      <div className="flex items-center justify-center bg-gray-100">
         <form
           onSubmit={handleLogin}
-          className="bg-white p-10 rounded-2xl shadow-xl flex flex-col gap-5 w-[90%] max-w-md text-gray-950"
+          className="z-10 relative p-10 rounded-2xl shadow-xl flex flex-col gap-5 w-[90%] max-w-md
+bg-gray-600/10 backdrop-blur-xl border border-gray-400/10 text-white"
         >
-          <h2 className="text-2xl font-bold text-center text-gray-900">
-            Acesse sua conta
-          </h2>
+          <img
+            src="/logo_dark.png"
+            className="w-40 z-20 pb-6 self-center"
+            alt=""
+          />
 
-          {/* EMAIL */}
-          <div className="flex flex-col gap-1 text-gray-950">
-            <label className="text-sm font-medium">Email</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-200">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="border border-gray-400/10 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="seu@email.com"
             />
           </div>
 
-          {/* SENHA */}
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Senha</label>
+            <label className="text-sm font-medium text-gray-200">Senha</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="border border-gray-400/10 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Senha"
             />
           </div>
 
-          {/* ERRO */}
           {error && (
             <div className="bg-red-100 text-red-600 p-2 rounded text-sm text-center">
               {error}
             </div>
           )}
 
-          {/* BOTÃO */}
           <button
             type="submit"
             disabled={loading}
-            className="bg-primary text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-60 cursor-pointer" 
+            className="bg-primary text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-60 cursor-pointer"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
 
-          {/* LINK EXTRA */}
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-gray-200">
             Esqueceu a senha?{' '}
             <span className="text-primary cursor-pointer hover:underline">
               Recuperar acesso

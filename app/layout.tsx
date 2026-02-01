@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { PWARegister } from './pwa-register';
-import '../styles/globals.scss';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Lintra_Tech_Painel',
+  title: 'Painel - Lintra Tech',
   description: 'Sistema de CRM interno da Lintra Tech',
   manifest: '/manifest.json',
   icons: {
@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased `}>
         <PWARegister />
         {children}
       </body>

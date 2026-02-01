@@ -1,21 +1,22 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
   /* Modern color palette in oklch format */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.17 0.02 265);
-  --card: oklch(1 0 0);
+  --background: #0d0d0d;
+  --foreground: #f0f0f0;
+  --card: #1c1c1c;
+  --color-text: #ffff;
   --card-foreground: oklch(0.17 0.02 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.17 0.02 265);
   --primary: oklch(0.6 0.18 245);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 0);
+  --secondary: #0095ff;
   --secondary-foreground: oklch(0.17 0.02 265);
-  --muted: oklch(0.91 0.01 0);
+  --muted: #919191;
   --muted-foreground: oklch(0.55 0.03 265);
   --accent: oklch(0.5 0.25 290);
   --accent-foreground: oklch(1 0 0);
@@ -23,26 +24,18 @@
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.91 0.01 0);
   --input: oklch(0.91 0.01 0);
-  --ring: oklch(0.45 0.22 265);
-  --chart-1: oklch(0.45 0.22 265);
-  --chart-2: oklch(0.5 0.25 290);
-  --chart-3: oklch(0.55 0.24 25);
-  --chart-4: oklch(0.6 0.22 60);
-  --chart-5: oklch(0.55 0.2 15);
   --radius: 0.75rem;
-  --sidebar: oklch(0.17 0.02 265);
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.45 0.22 265);
+  --sidebar: #454545;
+  --sidebar-foreground: #1c1c1c;
+  --sidebar-primary: #0095ff;
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.5 0.25 290);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.25 0.02 265);
-  --sidebar-ring: oklch(0.45 0.22 265);
+  --sidebar-border: #333333;
 }
 
 .dark {
   /* Dark mode palette */
-  --background: oklch(0.14 0.02 265);
+  --background: oklch(0.2507 0.0048 248.02);
+  /* --background: oklch(0.14 0.02 265); */
   --foreground: oklch(0.95 0 0);
   --card: oklch(0.17 0.02 265);
   --card-foreground: oklch(0.95 0 0);
@@ -77,8 +70,8 @@
 }
 
 @theme inline {
-  --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -128,7 +121,7 @@
 
 /* Modern component styles */
 .sidebar-link {
-  @apply px-4 py-4 rounded-full text-sm font-medium transition-all duration-200;
+  @apply transition-all duration-200;
   color: var(--sidebar-foreground);
   border: 2px solid transparent;
 

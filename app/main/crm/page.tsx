@@ -579,7 +579,7 @@ export default function Deals() {
             <FaRegAddressCard className="text-primary text-2xl" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">CRM Kanban</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">CRM Kanban</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie suas oportunidades de vendas
             </p>
@@ -591,11 +591,11 @@ export default function Deals() {
           <div className="relative" ref={funnelMenuRef}>
             <button
               onClick={() => setIsFunnelMenuOpen(!isFunnelMenuOpen)}
-              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-2 shadow-sm hover:bg-muted/50 transition-all min-w-[200px] justify-between cursor-pointer"
+              className="flex items-center gap-3 bg-card border border-border/20 rounded-lg px-4 py-2 shadow-sm hover:bg-muted/50 transition-all min-w-[200px] justify-between cursor-pointer"
             >
               <div className="flex items-center gap-2 overflow-hidden">
                 <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                <span className="text-sm font-bold truncate">
+                <span className="text-sm font-bold truncate text-white/80">
                   {activeFunnel?.name || 'Selecionar Funil'}
                 </span>
               </div>
@@ -608,7 +608,7 @@ export default function Deals() {
             </button>
 
             {isFunnelMenuOpen && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-card-hover rounded-xl shadow-xl z-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full left-0 mt-2 w-72 bg-card-hover rounded-xl shadow-xl z-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 bg-card text-muted">
                 <div className="p-2 max-h-80 overflow-y-auto scrollbar-thin">
                   {funnels.map((funnel) => (
                     <div
@@ -621,7 +621,7 @@ export default function Deals() {
                         setIsFunnelMenuOpen(false);
                       }}
                     >
-                      <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="flex items-center  gap-3 overflow-hidden">
                         <div
                           className={`w-5 h-5 rounded-full flex items-center justify-center ${
                             activeFunnelId === funnel.id
@@ -701,7 +701,7 @@ export default function Deals() {
       {/* --- KANBAN BOARD --- */}
       <main className="flex-1 overflow-hidden min-h-0 relative">
         {isLoading && (!funnels || funnels.length === 0) ? (
-          <div className="absolute inset-0 flex flex-col justify-center items-center bg-background/0 backdrop-blur-sm z-10">
+          <div className="absolute inset-0 flex flex-col justify-center items-center backdrop-blur-sm z-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
             <span className="text-muted-foreground font-medium">
               Carregando seu CRM...
@@ -719,18 +719,18 @@ export default function Deals() {
               return (
                 <div
                   key={stage.id}
-                  className="flex flex-col w-80 min-w-[20rem] bg-card rounded-xl border border-border/50 overflow-hidden"
+                  className="flex flex-col w-80 min-w-[20rem] bg-card rounded-xl border border-border/10 overflow-hidden"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => handleDrop(stage.id)}
                 >
-                  <div className="p-4 border-b border-muted-foreground bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+                  <div className="p-4 border-b border-muted-foreground/20 bg-card/10 backdrop-blur-sm sticky top-0 z-10 rounded-t-3xl">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-2.5 h-2.5 rounded-full shadow-sm"
                           style={{ backgroundColor: stage.color }}
                         />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">
+                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted">
                           {stage.name}
                         </h3>
                       </div>
@@ -755,7 +755,7 @@ export default function Deals() {
                       return (
                         <div
                           key={deal.id}
-                          className={`group bg-card hover:bg-card/80 border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden ${
+                          className={`group bg-card hover:bg-card/80 border border-border/10 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden ${
                             draggedDeal === deal.id ? 'opacity-40 scale-95' : ''
                           }`}
                           draggable
@@ -880,7 +880,7 @@ export default function Deals() {
       {/* --- MODAL FUNIL (CRIAR/EDITAR) --- */}
       {showFunnelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-muted-foreground flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {editingFunnelId ? 'Editar Funil' : 'Novo Funil'}
@@ -1158,7 +1158,7 @@ export default function Deals() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
             <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {editingDeal ? 'Editar Oportunidade' : 'Nova Oportunidade'}
@@ -1331,8 +1331,8 @@ export default function Deals() {
 
       {showDetailsContact && (
         <div className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b flex items-center justify-between bg-primary/5">
+          <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-border/20 flex items-center justify-between bg-primary/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <FaRegUser size={20} />
@@ -1418,7 +1418,7 @@ export default function Deals() {
             <div className="p-4 bg-muted/20 border-t flex justify-end">
               <button
                 onClick={handleModalContact}
-                className="px-6 py-2 bg-foreground text-background rounded-lg font-medium hover:opacity-90 transition-all"
+                className="px-6 py-2 bg-card text-background rounded-lg font-medium hover:opacity-90 transition-all"
               >
                 Entendido
               </button>
