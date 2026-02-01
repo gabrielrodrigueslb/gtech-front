@@ -1,31 +1,22 @@
 'use client';
 import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { FaTasks } from 'react-icons/fa';
-import { FaBuildingUser } from 'react-icons/fa6';
-import { LuLayoutDashboard } from 'react-icons/lu';
 import { MdLeaderboard } from 'react-icons/md';
 import { TiContacts } from 'react-icons/ti';
+import { LuLayoutDashboard } from "react-icons/lu";
+import { FaBuildingUser } from "react-icons/fa6";
+import { FaTasks , FaRegNewspaper} from "react-icons/fa";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const menuItems = [
-    {
-      id: 1,
-      path: '/main/dashboard',
-      label: 'Dashboard',
-      icon: <LuLayoutDashboard />,
-    },
-    { id: 2, path: '/main/contacts', label: 'Contatos', icon: <TiContacts /> },
-    { id: 3, path: '/main/crm', label: 'Negocios', icon: <MdLeaderboard /> },
-    {
-      id: 4,
-      path: '/main/clientes',
-      label: 'Clientes',
-      icon: <FaBuildingUser />,
-    },
-    { id: 5, path: '/main/tasks', label: 'Tarefas', icon: <FaTasks /> },
+    { id:1, path: '/main/dashboard', label: 'Dashboard', icon: <LuLayoutDashboard /> },
+    { id:2, path: '/main/contacts', label: 'Contatos', icon: <TiContacts /> },
+    { id:3, path: '/main/crm', label: 'Negócios', icon: <MdLeaderboard /> },
+    { id:4, path: '/main/clientes', label: 'Clientes', icon: <FaBuildingUser /> },
+    { id:7, path: '/main/posts', label: 'Posts', icon: <FaRegNewspaper /> },
+    { id:5, path: '/main/tasks', label: 'Tarefas', icon: <FaTasks /> },
   ];
 
   return (

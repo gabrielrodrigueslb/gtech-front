@@ -20,12 +20,17 @@ export default function MainLayout({
       className="h-screen flex-col-reverse md:flex-row flex w-screen overflow-hidden animate-in transition-opacity
         duration-300 ease-in-out"
     >
-      <Sidebar />
 
-      {/* ÁREA DAS PÁGINAS */}
-      <div className="flex-2 w-full overflow-hidden min-h-0 p-4 section-content">
-        <CRMProvider>{children}</CRMProvider>
-      </div>
+      {/* CONTEÚDO ABAIXO DO HEADER */}
+      <main className="flex flex-1  min-h-0">
+        {/* SIDEBAR */}
+        <Sidebar />
+
+        {/* ÁREA DAS PÁGINAS */}
+        <div className="flex-1 overflow-auto min-h-0 p-4 section-content">
+          <CRMProvider>{children}</CRMProvider>
+        </div>
+      </main>
     </div>
   );
 }
