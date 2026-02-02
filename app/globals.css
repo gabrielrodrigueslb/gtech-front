@@ -22,7 +22,7 @@
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.01 0);
+  --border: #2f3236;
   --input: oklch(0.91 0.01 0);
   --radius: 0.75rem;
   --sidebar: #454545;

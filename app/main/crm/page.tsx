@@ -591,7 +591,7 @@ export default function Deals() {
           <div className="relative" ref={funnelMenuRef}>
             <button
               onClick={() => setIsFunnelMenuOpen(!isFunnelMenuOpen)}
-              className="flex items-center gap-3 bg-card border border-border/20 rounded-lg px-4 py-2 shadow-sm hover:bg-muted/50 transition-all min-w-[200px] justify-between cursor-pointer"
+              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-2 shadow-sm hover:bg-muted/50 transition-all min-w-[200px] justify-between cursor-pointer"
             >
               <div className="flex items-center gap-2 overflow-hidden">
                 <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
@@ -719,7 +719,7 @@ export default function Deals() {
               return (
                 <div
                   key={stage.id}
-                  className="flex flex-col w-80 min-w-[20rem] bg-card rounded-xl border border-border/10 overflow-hidden"
+                  className="flex flex-col w-80 min-w-[20rem] bg-card rounded-xl border border-border overflow-hidden"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => handleDrop(stage.id)}
                 >
@@ -755,7 +755,7 @@ export default function Deals() {
                       return (
                         <div
                           key={deal.id}
-                          className={`group bg-card hover:bg-card/80 border border-border/10 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden ${
+                          className={`group bg-card hover:bg-card/80 border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden ${
                             draggedDeal === deal.id ? 'opacity-40 scale-95' : ''
                           }`}
                           draggable
@@ -805,7 +805,7 @@ export default function Deals() {
                       );
                     })}
                     {stageDealsList.length === 0 && (
-                      <div className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-border/50 text-muted-foreground/50 transition-colors hover:border-primary/20 hover:text-primary/30">
+                      <div className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-border text-muted-foreground/50 transition-colors hover:border-primary/20 hover:text-primary/30">
                         <FaPlus size={20} className="mb-2 opacity-20" />
                         <span className="text-xs font-medium">
                           Arraste ou crie aqui
@@ -880,7 +880,7 @@ export default function Deals() {
       {/* --- MODAL FUNIL (CRIAR/EDITAR) --- */}
       {showFunnelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-muted-foreground flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {editingFunnelId ? 'Editar Funil' : 'Novo Funil'}
@@ -919,7 +919,7 @@ export default function Deals() {
                       onDragStart={() => handleStageDragStart(index)}
                       onDragOver={handleStageDragOver}
                       onDrop={() => handleStageDrop(index)}
-                      className="flex items-center gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/50 group cursor-move"
+                      className="flex items-center gap-3 bg-muted/30 p-2.5 rounded-xl border border-border group cursor-move"
                     >
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
@@ -1044,7 +1044,7 @@ export default function Deals() {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
                     Descrição
                   </h3>
-                  <p className="text-sm leading-relaxed text-foreground/80 bg-muted/30 p-4 rounded-xl border border-border/50">
+                  <p className="text-sm leading-relaxed text-foreground/80 bg-muted/30 p-4 rounded-xl border border-border">
                     {selectedDeal.description || 'Nenhuma descrição fornecida.'}
                   </p>
                 </div>
@@ -1158,7 +1158,7 @@ export default function Deals() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
             <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {editingDeal ? 'Editar Oportunidade' : 'Nova Oportunidade'}
@@ -1331,8 +1331,8 @@ export default function Deals() {
 
       {showDetailsContact && (
         <div className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border/20 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-border/20 flex items-center justify-between bg-primary/5">
+          <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-border flex items-center justify-between bg-primary/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <FaRegUser size={20} />
@@ -1359,7 +1359,7 @@ export default function Deals() {
                   );
                 return (
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border">
                       <div className="bg-card p-2 rounded-lg shadow-sm text-primary">
                         <FaRegUser size={16} />
                       </div>
@@ -1371,7 +1371,7 @@ export default function Deals() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border">
                         <div className="bg-card p-2 rounded-lg shadow-sm text-primary">
                           <FaPhone size={16} />
                         </div>
@@ -1384,7 +1384,7 @@ export default function Deals() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border">
                         <div className="bg-card p-2 rounded-lg shadow-sm text-primary">
                           <FaGlobe size={16} />
                         </div>
@@ -1398,7 +1398,7 @@ export default function Deals() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border">
                       <div className="bg-card p-2 rounded-lg shadow-sm text-primary">
                         <FaMapMarkerAlt size={16} />
                       </div>
