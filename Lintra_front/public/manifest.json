@@ -1,0 +1,22 @@
+{
+  "name": "Lintra_Tech_Painel",
+  "short_name": "Lintra Tech",
+  "description": "Sistema de CRM interno da Lintra Tech",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "linear-gradient(121.09deg, #11182b 0%, #280f0f 100%)",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
