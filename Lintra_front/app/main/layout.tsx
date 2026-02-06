@@ -1,6 +1,28 @@
-import Header from '@/components/header';
+import type { Metadata } from 'next';
 import Sidebar from '@/components/sidebar';
 import { CRMProvider } from '@/context/crm-context';
+
+export const metadata: Metadata = {
+  title: 'Painel - Lintra Tech',
+  description: 'Sistema de CRM interno da Lintra Tech',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon_light.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/icon.png', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-icon.png',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+  verification:{
+    google: 'Livqowmo0Ajv9D6E0i5wyzParTYzc6r9pS6noxyZ0WE',
+  }
+};
+
 
 export const viewport = {
   themeColor: '#11182b',
