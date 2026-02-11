@@ -1,6 +1,0 @@
-User-agent: *
-Disallow: /main
-Disallow: /clientes
-Disallow: /contacts
-Disallow: /crm
-Disallow: /
