@@ -231,7 +231,7 @@ export default function DetailsModal({
           </div>
 
           {/* TABS */}
-          <div className="flex items-center gap-1 mt-6 border-b border-border/50 overflow-x-auto">
+          <div className="flex items-center gap-1 mt-6 border-b border-border/50 max-sm:overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}

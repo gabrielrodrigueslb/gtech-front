@@ -1,19 +1,18 @@
 ﻿'use client';
 
 import type React from 'react';
-
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+
+// --- SERVIÇOS ---
+import { deletePipeline as deletePipelineService } from '@/lib/pipeline';
 import {
-  createPipeline as createPipelineService,
-  updatePipeline as updatePipelineService,
-  deletePipeline as deletePipelineService,
-} from '@/lib/pipeline';
-import {
-  createOpportunity,
   getOpportunities,
   updateOpportunity as updateOpportunityService,
-  deleteOpportunity as deleteOpportunityService,
 } from '@/lib/opportunity';
+import { getUsers, type User } from '@/lib/user';
+import { getContacts, type Contact as ContactType } from '@/lib/contact';
+
+// --- ÍCONES ---
 import {
   FaRegUser,
   FaPlus,
@@ -25,14 +24,16 @@ import {
 } from 'react-icons/fa';
 import { FaRegAddressCard } from 'react-icons/fa6';
 
-import { GrView } from 'react-icons/gr';
-import { getUsers, type User } from '@/lib/user';
-import { getContacts, type Contact as ContactType } from '@/lib/contact';
-import { formatPhoneNumber } from '@/lib/utils';
+// --- CONTEXTOS ---
 import { useCRM, type Deal } from '@/context/crm-context';
 import { useFunnel } from '@/context/funnel-context';
-import DetailsModal from './components/detailsModal';
 
+// --- COMPONENTES MODAIS (Refatorados) ---
+import DetailsModal from './components/detailsModal';
+import DealFormModal from './components/DealFormModal';
+import FunnelFormModal from './components/FunnelFormModal';
+
+// Tipo auxiliar para compatibilidade com o DetailsModal existente
 type DetailsFormData = {
   title: string;
   description: string;
@@ -56,13 +57,7 @@ type DetailsFormData = {
 };
 
 export default function Deals() {
-  const {
-    deals,
-    addDeal,
-    updateDeal,
-    deleteDeal,
-    moveDeal,
-  } = useCRM();
+  const { deals, addDeal, updateDeal, deleteDeal, moveDeal } = useCRM();
 
   const {
     funnels,
@@ -70,172 +65,52 @@ export default function Deals() {
     activeFunnelId,
     setActiveFunnelId,
     isLoadingFunnels,
-    addFunnel,
-    updateFunnel,
     deleteFunnel,
   } = useFunnel();
 
   // --- ESTADOS GERAIS ---
   const [isLoading, setIsLoading] = useState(true);
 
-  const [showModal, setShowModal] = useState(false);
-  const [showFunnelModal, setShowFunnelModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showDeleteFunnelModal, setShowDeleteFunnelModal] = useState(false);
+  // Modais
+  const [showModal, setShowModal] = useState(false); // Modal de Deal (Criar/Editar)
+  const [showFunnelModal, setShowFunnelModal] = useState(false); // Modal de Funil (Criar/Editar)
+  const [showDetailsModal, setShowDetailsModal] = useState(false); // Modal de Detalhes (Visualizar)
+  const [showDeleteFunnelModal, setShowDeleteFunnelModal] = useState(false); // Modal de Confirmação (Excluir Funil)
+
+  // Seleções
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+  const [editingFunnel, setEditingFunnel] = useState<{
+    id: string;
+    name: string;
+    stages: any[];
+  } | null>(null);
   const [funnelToDelete, setFunnelToDelete] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
-  const [editingFunnelId, setEditingFunnelId] = useState<string | null>(null);
-
+  // Refs de UI
   const boardRef = useRef<HTMLDivElement | null>(null);
   const autoScrollRef = useRef<number | null>(null);
+  const funnelMenuRef = useRef<HTMLDivElement>(null);
+  const [isFunnelMenuOpen, setIsFunnelMenuOpen] = useState(false);
 
-  const SCROLL_EDGE_SIZE = 80; // px de distÃ¢ncia da borda
-  const SCROLL_SPEED = 12; // velocidade do scroll
+  const SCROLL_EDGE_SIZE = 80;
+  const SCROLL_SPEED = 12;
 
   // --- DADOS REAIS ---
   const [users, setUsers] = useState<User[]>([]);
   const [availableContacts, setAvailableContacts] = useState<ContactType[]>([]);
 
-  // --- DRAG AND DROP ---
+  // --- DRAG AND DROP (Deal) ---
   const [draggedDeal, setDraggedDeal] = useState<string | null>(null);
   const [dragSource, setDragSource] = useState<{
     stageId: string;
     funnelId: string;
   } | null>(null);
 
-  const handleAutoScroll = (e: React.DragEvent) => {
-    if (!boardRef.current) return;
-
-    const container = boardRef.current;
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX;
-
-    // Cancela scroll anterior
-    if (autoScrollRef.current) {
-      cancelAnimationFrame(autoScrollRef.current);
-      autoScrollRef.current = null;
-    }
-
-    // Borda esquerda
-    if (mouseX < rect.left + SCROLL_EDGE_SIZE) {
-      autoScrollRef.current = requestAnimationFrame(() => {
-        container.scrollLeft -= SCROLL_SPEED;
-      });
-    }
-
-    // Borda direita
-    else if (mouseX > rect.right - SCROLL_EDGE_SIZE) {
-      autoScrollRef.current = requestAnimationFrame(() => {
-        container.scrollLeft += SCROLL_SPEED;
-      });
-    }
-  };
-
-  // --- ESTADOS DO FORMULÃRIO ---
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    value: 0,
-    contactId: '',
-    contactNumber: '',
-    website: '',
-    address: '',
-    clientRole: '',
-    clientName: '',
-    clientPhone: '',
-    clientEmail: '',
-    enderecoCliente: '',
-    redesSocial1: '',
-    redesSocial2: '',
-    linksExtras: [] as string[],
-    ownerId: '',
-    probability: 50,
-    expectedClose: '',
-  });
-
-  const openModal = (deal?: Deal) => {
-    if (deal) {
-      setEditingDeal(deal);
-      const rawNumber = deal.contactNumber ?? '';
-      setFormData({
-        title: deal.title,
-        description: deal.description || '',
-        value: deal.value,
-        contactId: deal.contactId,
-        ownerId: deal.ownerId || deal.owner?.id || '',
-        probability: deal.probability,
-        expectedClose: new Date(deal.expectedClose).toISOString().split('T')[0],
-        contactNumber: rawNumber ? formatPhoneNumber(rawNumber) : '',
-        website: deal.website ?? '',
-        address: deal.address ?? '',
-        clientRole: deal.clientRole ?? '',
-        clientName: deal.clientName ?? '',
-        clientPhone: deal.clientPhone ?? '',
-        clientEmail: deal.clientEmail ?? '',
-        enderecoCliente: deal.enderecoCliente ?? '',
-        redesSocial1: deal.redesSocial1 ?? '',
-        redesSocial2: deal.redesSocial2 ?? '',
-        linksExtras: deal.linksExtras ?? [],
-      });
-    } else {
-      setEditingDeal(null);
-      setFormData({
-        title: '',
-        description: '',
-        value: 0,
-        contactId: '',
-        website: '',
-        contactNumber: '',
-        address: '',
-        clientRole: '',
-        clientName: '',
-        clientPhone: '',
-        clientEmail: '',
-        enderecoCliente: '',
-        redesSocial1: '',
-        redesSocial2: '',
-        linksExtras: [],
-        ownerId: '',
-        probability: 50,
-        expectedClose: new Date().toISOString().split('T')[0],
-      });
-    }
-    setShowModal(true);
-  };
-
-  // --- ESTADOS DO FUNIL ---
-  const [funnelName, setFunnelName] = useState('');
-  const [funnelStages, setFunnelStages] = useState<
-    { id?: string; name: string; color: string }[]
-  >([
-    { name: 'Lead', color: '#F59E0B' },
-    { name: 'Negociação', color: '#8B5CF6' },
-    { name: 'Fechado', color: '#10B981' },
-  ]);
-
-  const [draggedStageIndex, setDraggedStageIndex] = useState<number | null>(
-    null,
-  );
-  const [newStageName, setNewStageName] = useState('');
-  const [newStageColor, setNewStageColor] = useState('#6366F1');
-  const [isFunnelMenuOpen, setIsFunnelMenuOpen] = useState(false);
-  const funnelMenuRef = useRef<HTMLDivElement>(null);
-
-  const PRESET_COLORS = [
-    '#F59E0B',
-    '#3B82F6',
-    '#10B981',
-    '#8B5CF6',
-    '#06B6D4',
-    '#EC4899',
-    '#6366F1',
-  ];
-  // --- CARREGAMENTO INICIAL ---
+  // --- EFEITOS DE CARREGAMENTO ---
   useEffect(() => {
     async function loadAllData() {
       setIsLoading(true);
@@ -244,7 +119,6 @@ export default function Deals() {
           getUsers(),
           getContacts(),
         ]);
-
         setUsers(usersData || []);
         setAvailableContacts(contactsData || []);
       } catch (error: any) {
@@ -253,7 +127,6 @@ export default function Deals() {
         setIsLoading(false);
       }
     }
-
     loadAllData();
   }, []);
 
@@ -317,106 +190,31 @@ export default function Deals() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // --- MEMOS E CALLBACKS ---
   const funnelDeals = useMemo(
     () => deals.filter((d) => d.funnelId === activeFunnelId),
-    [deals, activeFunnelId],
+    [deals, activeFunnelId]
   );
 
   const getStageDeals = useCallback(
     (stageId: string) => funnelDeals.filter((d) => d.stage === stageId),
-    [funnelDeals],
+    [funnelDeals]
   );
   const getStageTotal = useCallback(
     (stageId: string) =>
       getStageDeals(stageId).reduce((acc, d) => acc + d.value, 0),
-    [getStageDeals],
+    [getStageDeals]
   );
 
-  // --- HANDLERS (PIPELINE) ---
-  const handleAddStage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!newStageName.trim()) return;
-    setFunnelStages([
-      ...funnelStages,
-      { name: newStageName, color: newStageColor },
-    ]);
-    setNewStageName('');
-    setNewStageColor(
-      PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)],
-    );
-  };
-
-  const handleRemoveStage = (index: number) => {
-    const newStages = [...funnelStages];
-    newStages.splice(index, 1);
-    setFunnelStages(newStages);
-  };
-
-  const handleStageDragStart = (index: number) => setDraggedStageIndex(index);
-  const handleStageDragOver = (e: React.DragEvent) => e.preventDefault();
-  const handleStageDrop = (targetIndex: number) => {
-    if (draggedStageIndex === null || draggedStageIndex === targetIndex) return;
-    const newStages = [...funnelStages];
-    const itemToMove = newStages[draggedStageIndex];
-    newStages.splice(draggedStageIndex, 1);
-    newStages.splice(targetIndex, 0, itemToMove);
-    setFunnelStages(newStages);
-    setDraggedStageIndex(null);
-  };
-
-  const handleFunnelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!funnelName.trim()) return alert('Nome do funil Ã© obrigatÃ³rio');
-    if (funnelStages.length === 0)
-      return alert('Adicione pelo menos uma etapa');
-
-    try {
-      if (editingFunnelId) {
-        // Correção: updatePipelineService espera (id, name, stages)
-        const updatedPipeline = await updatePipelineService(
-          editingFunnelId,
-          funnelName,
-          funnelStages,
-        );
-        // Correção: updateFunnel espera (id, funnel)
-        updateFunnel(editingFunnelId, {
-          id: updatedPipeline.id,
-          name: updatedPipeline.name,
-          stages: updatedPipeline.stages || [],
-        });
-      } else {
-        const newPipeline = await createPipelineService(
-          funnelName,
-          funnelStages,
-        );
-        addFunnel({
-          id: newPipeline.id,
-          name: newPipeline.name,
-          stages: newPipeline.stages || [],
-        });
-        setActiveFunnelId(newPipeline.id);
-      }
-      setShowFunnelModal(false);
-      resetFunnelForm();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao salvar funil');
-    }
-  };
-
-  const resetFunnelForm = () => {
-    setFunnelName('');
-    setFunnelStages([
-      { name: 'Lead', color: '#F59E0B' },
-      { name: 'Negociação', color: '#8B5CF6' },
-      { name: 'Fechado', color: '#10B981' },
-    ]);
-    setEditingFunnelId(null);
+  // --- HANDLERS: FUNIL (Abrir Modais) ---
+  const openCreateFunnel = () => {
+    setEditingFunnel(null);
+    setShowFunnelModal(true);
+    setIsFunnelMenuOpen(false);
   };
 
   const openEditFunnel = (funnel: any) => {
-    setEditingFunnelId(funnel.id);
-    setFunnelName(funnel.name);
-    setFunnelStages(funnel.stages || []);
+    setEditingFunnel(funnel);
     setShowFunnelModal(true);
     setIsFunnelMenuOpen(false);
   };
@@ -439,113 +237,26 @@ export default function Deals() {
     }
   };
 
-  // --- HANDLERS (OPPORTUNITY) ---
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const currentStageId = activeFunnel?.stages[0]?.id;
+  // --- HANDLERS: DEAL (Drag & Scroll) ---
+  const handleAutoScroll = (e: React.DragEvent) => {
+    if (!boardRef.current) return;
+    const container = boardRef.current;
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX;
 
-    if (!activeFunnelId || (!editingDeal && !currentStageId)) {
-      alert('Erro: Funil ou Estágio não identificados.');
-      return;
+    if (autoScrollRef.current) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
     }
 
-    try {
-      if (editingDeal) {
-        await updateOpportunityService(editingDeal.id, {
-          title: formData.title,
-          description: formData.description,
-          amount: Number(formData.value),
-          probability: Number(formData.probability),
-          website: formData.website,
-          contactNumber: formData.contactNumber.replace(/\D/g, ''),
-          address: formData.address,
-          clientRole: formData.clientRole,
-          clientName: formData.clientName,
-          clientPhone: formData.clientPhone,
-          clientEmail: formData.clientEmail,
-          enderecoCliente: formData.enderecoCliente,
-          redesSocial1: formData.redesSocial1,
-          redesSocial2: formData.redesSocial2,
-          linksExtras: formData.linksExtras,
-          dueDate: formData.expectedClose,
-          contactId: formData.contactId,
-          ownerId: formData.ownerId,
-          stageId: editingDeal.stage,
-          pipelineId: editingDeal.funnelId,
-        });
-
-        updateDeal(editingDeal.id, {
-          title: formData.title,
-          description: formData.description,
-          value: Number(formData.value),
-          probability: Number(formData.probability),
-          contactId: formData.contactId,
-          website: formData.website,
-          contactNumber: formData.contactNumber.replace(/\D/g, ''),
-          address: formData.address,
-          clientRole: formData.clientRole,
-          clientName: formData.clientName,
-          clientPhone: formData.clientPhone,
-          clientEmail: formData.clientEmail,
-          enderecoCliente: formData.enderecoCliente,
-          redesSocial1: formData.redesSocial1,
-          redesSocial2: formData.redesSocial2,
-          linksExtras: formData.linksExtras,
-          expectedClose: new Date(formData.expectedClose),
-          ownerId: formData.ownerId,
-        } as any);
-      } else {
-        const newOpp = await createOpportunity({
-          title: formData.title,
-          description: formData.description,
-          amount: Number(formData.value),
-          probability: Number(formData.probability),
-          website: formData.website,
-          contactNumber: formData.contactNumber.replace(/\D/g, ''),
-          address: formData.address,
-          clientRole: formData.clientRole,
-          clientName: formData.clientName,
-          clientPhone: formData.clientPhone,
-          clientEmail: formData.clientEmail,
-          enderecoCliente: formData.enderecoCliente,
-          redesSocial1: formData.redesSocial1,
-          redesSocial2: formData.redesSocial2,
-          linksExtras: formData.linksExtras,
-          dueDate: formData.expectedClose,
-          contactId: formData.contactId,
-          ownerId: formData.ownerId,
-          stageId: currentStageId!,
-          pipelineId: activeFunnelId,
-        });
-
-        addDeal({
-          id: newOpp.id,
-          title: newOpp.title,
-          description: newOpp.description,
-          value: newOpp.amount,
-          probability: newOpp.probability,
-          contactId: newOpp.contacts?.[0]?.id || formData.contactId,
-          ownerId: newOpp.owner?.id || formData.ownerId,
-          website: newOpp.website,
-          contactNumber: newOpp.contactNumber,
-          address: newOpp.address,
-          clientRole: newOpp.clientRole,
-          clientName: newOpp.clientName,
-          clientPhone: newOpp.clientPhone,
-          clientEmail: newOpp.clientEmail,
-          enderecoCliente: newOpp.enderecoCliente,
-          redesSocial1: newOpp.redesSocial1,
-          redesSocial2: newOpp.redesSocial2,
-          linksExtras: newOpp.linksExtras,
-          stage: newOpp.stageId,
-          funnelId: newOpp.pipelineId,
-          expectedClose: new Date(newOpp.dueDate),
-          createdAt: new Date(),
-        } as any);
-      }
-      setShowModal(false);
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao salvar oportunidade');
+    if (mouseX < rect.left + SCROLL_EDGE_SIZE) {
+      autoScrollRef.current = requestAnimationFrame(() => {
+        container.scrollLeft -= SCROLL_SPEED;
+      });
+    } else if (mouseX > rect.right - SCROLL_EDGE_SIZE) {
+      autoScrollRef.current = requestAnimationFrame(() => {
+        container.scrollLeft += SCROLL_SPEED;
+      });
     }
   };
 
@@ -553,8 +264,6 @@ export default function Deals() {
     setDraggedDeal(dealId);
     setDragSource({ stageId, funnelId: activeFunnelId });
   };
-
-  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
   const handleDrop = async (targetStageId: string) => {
     if (autoScrollRef.current) {
@@ -569,7 +278,6 @@ export default function Deals() {
     }
 
     const dealId = draggedDeal;
-
     moveDeal(dealId, targetStageId);
     setDraggedDeal(null);
     setDragSource(null);
@@ -581,17 +289,10 @@ export default function Deals() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!editingDeal) return;
-    if (!confirm('Tem certeza que deseja excluir esta oportunidade?')) return;
-    try {
-      await deleteOpportunityService(editingDeal.id);
-      deleteDeal(editingDeal.id);
-      setShowModal(false);
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao excluir.');
-    }
+  // --- HANDLERS: DEAL (Abrir/Salvar Detalhes) ---
+  const openModalDeal = (deal?: Deal) => {
+    setEditingDeal(deal || null);
+    setShowModal(true);
   };
 
   const openDetailsModal = (deal: Deal) => {
@@ -650,8 +351,8 @@ export default function Deals() {
         owner: updatedOwner
           ? { id: updatedOwner.id, name: updatedOwner.name }
           : data.ownerId
-            ? { id: data.ownerId, name: selectedDeal.owner?.name || '' }
-            : undefined,
+          ? { id: data.ownerId, name: selectedDeal.owner?.name || '' }
+          : undefined,
         stage: data.stageId || selectedDeal.stage,
       };
 
@@ -666,7 +367,7 @@ export default function Deals() {
   const renderUserAvatar = (
     name: string,
     size = 'w-8 h-8',
-    textSize = 'text-xs',
+    textSize = 'text-xs'
   ) => {
     const initial = name ? name[0].toUpperCase() : '?';
     return (
@@ -732,7 +433,7 @@ export default function Deals() {
                         setIsFunnelMenuOpen(false);
                       }}
                     >
-                      <div className="flex items-center  gap-3 overflow-hidden">
+                      <div className="flex items-center gap-3 overflow-hidden">
                         <div
                           className={`w-5 h-5 rounded-full flex items-center justify-center ${
                             activeFunnelId === funnel.id
@@ -773,7 +474,7 @@ export default function Deals() {
                             e.stopPropagation();
                             confirmDeleteFunnel(funnel);
                           }}
-                          className="p-1.5 hover:bg-destructive/10 text-muted-foreground rounded-md transition-colors cursor-pointer  hover:text-red-400"
+                          className="p-1.5 hover:bg-destructive/10 text-muted-foreground rounded-md transition-colors cursor-pointer hover:text-red-400"
                           title="Excluir"
                         >
                           <FaTrash size={12} />
@@ -784,11 +485,7 @@ export default function Deals() {
                 </div>
                 <div className="p-2 bg-muted/20">
                   <button
-                    onClick={() => {
-                      setShowFunnelModal(true);
-                      resetFunnelForm();
-                      setIsFunnelMenuOpen(false);
-                    }}
+                    onClick={openCreateFunnel}
                     className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer"
                   >
                     <FaPlus size={10} />
@@ -801,7 +498,7 @@ export default function Deals() {
 
           <button
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-all shadow-sm cursor-pointer"
-            onClick={() => openModal()}
+            onClick={() => openModalDeal()}
           >
             <FaPlus size={14} />
             <span>Nova Oportunidade</span>
@@ -811,7 +508,8 @@ export default function Deals() {
 
       {/* --- KANBAN BOARD --- */}
       <main className="flex-1 overflow-hidden min-h-0 relative">
-        { (isLoading || isLoadingFunnels) && (!funnels || funnels.length === 0) ? (
+        {(isLoading || isLoadingFunnels) &&
+        (!funnels || funnels.length === 0) ? (
           <div className="absolute inset-0 flex flex-col justify-center items-center backdrop-blur-sm z-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
             <span className="text-muted-foreground font-medium">
@@ -860,7 +558,7 @@ export default function Deals() {
                   <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-none">
                     {stageDealsList.map((deal) => {
                       const contact = availableContacts.find(
-                        (c) => c.id === deal.contactId,
+                        (c) => c.id === deal.contactId
                       );
                       const ownerName = deal.owner?.name;
                       return (
@@ -909,7 +607,7 @@ export default function Deals() {
                               renderUserAvatar(
                                 ownerName,
                                 'w-6 h-6',
-                                'text-[10px]',
+                                'text-[10px]'
                               )}
                           </div>
                         </div>
@@ -940,10 +638,7 @@ export default function Deals() {
               Crie seu primeiro funil de vendas para começar a gerenciar leads.
             </p>
             <button
-              onClick={() => {
-                setShowFunnelModal(true);
-                resetFunnelForm();
-              }}
+              onClick={openCreateFunnel}
               className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-all"
             >
               Criar Funil
@@ -951,6 +646,34 @@ export default function Deals() {
           </div>
         )}
       </main>
+
+      {/* --- MODAIS DE NEGÓCIO --- */}
+      <DealFormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        editingDeal={editingDeal}
+        activeFunnelId={activeFunnelId}
+        initialStageId={activeFunnel?.stages[0]?.id}
+        users={users}
+        availableContacts={availableContacts}
+      />
+
+      {showDetailsModal && selectedDeal && (
+        <DetailsModal
+          selectedDeal={selectedDeal}
+          availableContacts={availableContacts}
+          availableUsers={users}
+          onClose={closeDetailsModal}
+          onSave={handleSaveDetails}
+        />
+      )}
+
+      {/* --- MODAIS DE FUNIL --- */}
+      <FunnelFormModal
+        isOpen={showFunnelModal}
+        onClose={() => setShowFunnelModal(false)}
+        funnelToEdit={editingFunnel}
+      />
 
       {/* --- MODAL CONFIRMAÇÃO EXCLUSÃO FUNIL --- */}
       {showDeleteFunnelModal && funnelToDelete && (
@@ -962,7 +685,7 @@ export default function Deals() {
               </div>
               <h2 className="text-xl font-bold mb-2">Excluir Funil?</h2>
               <p className="text-muted-foreground text-sm mb-6">
-                VocÃª está prestes a excluir o funil{' '}
+                Você está prestes a excluir o funil{' '}
                 <span className="font-bold text-foreground">
                   "{funnelToDelete.name}"
                 </span>
@@ -984,445 +707,6 @@ export default function Deals() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL FUNIL (CRIAR/EDITAR) --- */}
-      {showFunnelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-muted-foreground flex items-center justify-between">
-              <h2 className="text-xl font-bold">
-                {editingFunnelId ? 'Editar Funil' : 'Novo Funil'}
-              </h2>
-              <button
-                onClick={() => setShowFunnelModal(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleFunnelSubmit} className="p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">
-                  Nome do Funil
-                </label>
-                <input
-                  type="text"
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  placeholder="Ex: Vendas Enterprise"
-                  value={funnelName}
-                  onChange={(e) => setFunnelName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase text-muted-foreground">
-                  Etapas do Processo
-                </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2 scrollbar-thin">
-                  {funnelStages.map((stage, index) => (
-                    <div
-                      key={index}
-                      draggable
-                      onDragStart={() => handleStageDragStart(index)}
-                      onDragOver={handleStageDragOver}
-                      onDrop={() => handleStageDrop(index)}
-                      className="flex items-center gap-3 bg-muted/30 p-2.5 rounded-xl border border-border group cursor-move"
-                    >
-                      <div
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: stage.color }}
-                      />
-                      <span className="flex-1 text-sm font-medium">
-                        {stage.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveStage(index)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <input
-                    type="text"
-                    className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary transition-all"
-                    placeholder="Nova etapa..."
-                    value={newStageName}
-                    onChange={(e) => setNewStageName(e.target.value)}
-                  />
-                  <div className="flex gap-1 items-center bg-muted/50 border rounded-lg px-2">
-                    {PRESET_COLORS.slice(0, 3).map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setNewStageColor(color)}
-                        className={`w-4 h-4 rounded-full transition-transform ${
-                          newStageColor === color
-                            ? 'scale-125 ring-1 ring-primary'
-                            : 'opacity-50'
-                        }`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddStage}
-                    className="bg-primary text-primary-foreground w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-90 transition-all cursor-pointer"
-                  >
-                    <FaPlus size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  className="flex-1 px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-all cursor-pointer"
-                  onClick={() => setShowFunnelModal(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all cursor-pointer"
-                >
-                  {editingFunnelId ? 'Salvar Alterações' : 'Criar Funil'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* --- OUTROS MODAIS --- */}
-      {showDetailsModal && selectedDeal && (
-        <DetailsModal
-          selectedDeal={selectedDeal}
-          availableContacts={availableContacts}
-          availableUsers={users}
-          onClose={closeDetailsModal}
-          onSave={handleSaveDetails}
-        />
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <h2 className="text-xl font-bold">
-                {editingDeal ? 'Editar Oportunidade' : 'Nova Oportunidade'}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin"
-            >
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">
-                  Tí­tulo da Oportunidade
-                </label>
-                <input
-                  type="text"
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  placeholder="Ex: Projeto de Consultoria"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Valor (R$)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                      R$
-                    </span>
-                    <input
-                      type="string"
-                      className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={Number(formData.value)}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          value: Number(e.target.value),
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Probabilidade (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                    value={formData.probability}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        probability: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Contato
-                  </label>
-                  <select
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer"
-                    value={formData.contactId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, contactId: e.target.value })
-                    }
-                  >
-                    <option value="">Selecione um contato</option>
-                    {availableContacts.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Responsável
-                  </label>
-                  <select
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer"
-                    value={formData.ownerId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ownerId: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">Selecione um usuário</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">
-                  Data Prevista de Fechamento
-                </label>
-                <input
-                  type="date"
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer"
-                  value={formData.expectedClose}
-                  onChange={(e) =>
-                    setFormData({ ...formData, expectedClose: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">
-                  Descrição
-                </label>
-                <textarea
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[100px] resize-none"
-                  placeholder="Detalhes sobre a negociação..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="pt-2 border-t border-border/60">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground mb-3">
-                  Dados do Cliente
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Nome do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.clientName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, clientName: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Cargo do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.clientRole}
-                      onChange={(e) =>
-                        setFormData({ ...formData, clientRole: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Telefone do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.clientPhone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, clientPhone: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Email do Cliente
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.clientEmail}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          clientEmail: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2 mt-4">
-                  <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Endereço do Cliente
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                    value={formData.enderecoCliente}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        enderecoCliente: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/60">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground mb-3">
-                  Redes Sociais
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Rede Social 1
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.redesSocial1}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          redesSocial1: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">
-                      Rede Social 2
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                      value={formData.redesSocial2}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          redesSocial2: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/60">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground mb-3">
-                  Links Úteis
-                </h3>
-                <textarea
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[120px] resize-none"
-                  placeholder="https://exemplo.com\nhttps://outro-link.com"
-                  value={formData.linksExtras.join('\n')}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      linksExtras: e.target.value
-                        .split('\n')
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                />
-              </div>
-              <div className="pt-4 flex items-center gap-3">
-                {editingDeal && (
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="p-2.5 text-destructive hover:bg-destructive/10 rounded-xl transition-colors cursor-pointer"
-                    title="Excluir"
-                  >
-                    <FaTrash size={18} />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="flex-1 px-6 py-2.5 border border-border rounded-xl font-medium hover:bg-muted transition-all cursor-pointer"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20 cursor-pointer"
-                >
-                  {editingDeal ? 'Salvar Alterações' : 'Criar Oportunidade'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

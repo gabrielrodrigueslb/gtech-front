@@ -80,13 +80,13 @@ export default function Sidebar() {
   return (
     <aside className="m-3 md:py-10 bg-sidebar-foreground rounded-3xl shadow-lg shrink-0 flex flex-col md:items-center max-md:overflow-scroll">
       <Image src="/logo_dark.png" width={20} quality={100} height={20} className='w-15 pb-10 select-none hidden md:block' alt="" />
-      <nav className=" h-full w-24  p-4">
-        <ul className=" flex flex-row md:flex-col gap-3 items-center">
+      <nav className=" h-full w-20  p-4">
+        <ul className=" flex flex-col gap-3 items-center">
           {menuItems.map((item) => (
             <li key={item.id}>
               <Link
                 href={item.path}
-                className={` w-full flex items-center bg-sidebar-foreground py-4 px-7 rounded-4xl text-sidebar text-2xl ${
+                className={` w-full flex items-center bg-sidebar-foreground py-3 px-6 rounded-4xl text-sidebar text-xl ${
                   pathname == item.path ? 'bg-sidebar-primary  text-white' : 'hover:bg-sidebar-border hover:text-sidebar-primary-foreground'
                 }`}
               >
