@@ -11,6 +11,7 @@ import {
   FaMapMarkerAlt,
   FaPhone,
   FaRegUser,
+  FaTrash,
   FaLinkedin,
   FaInstagram,
   FaLink,
@@ -62,6 +63,7 @@ type DetailsModalProps = {
   availableUsers: User[];
   onClose: () => void;
   onSave: (data: DetailsFormData) => Promise<void> | void;
+  onRequestDelete?: () => void;
 };
 
 // --- HELPER FUNCTIONS ---
@@ -128,6 +130,7 @@ export default function DetailsModal({
   availableUsers,
   onClose,
   onSave,
+  onRequestDelete,
 }: DetailsModalProps) {
   const { activeFunnel } = useFunnel();
   const [activeTab, setActiveTab] = useState<
@@ -152,6 +155,11 @@ export default function DetailsModal({
       setIsSaving(false);
       onClose();
     }
+  };
+
+  const handleDelete = () => {
+    if (!onRequestDelete) return;
+    onRequestDelete();
   };
 
   const stageOptions = activeFunnel?.stages || [];
@@ -532,10 +540,19 @@ export default function DetailsModal({
         </div>
 
         {/* FOOTER */}
-        <footer className="flex-none p-4 bg-muted/20 border-t border-border flex justify-end gap-3">
+        <footer className="flex-none p-4 bg-muted/20 border-t border-border flex items-center gap-3">
+          {onRequestDelete && (
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-destructive hover:bg-destructive/10 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <FaTrash size={14} />
+              Excluir
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer"
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer ml-auto"
           >
             Cancelar
           </button>

@@ -8,6 +8,7 @@ import { deletePipeline as deletePipelineService } from '@/lib/pipeline';
 import {
   getOpportunities,
   updateOpportunity as updateOpportunityService,
+  deleteOpportunity as deleteOpportunityService,
 } from '@/lib/opportunity';
 import { getUsers, type User } from '@/lib/user';
 import { getContacts, type Contact as ContactType } from '@/lib/contact';
@@ -76,6 +77,7 @@ export default function Deals() {
   const [showFunnelModal, setShowFunnelModal] = useState(false); // Modal de Funil (Criar/Editar)
   const [showDetailsModal, setShowDetailsModal] = useState(false); // Modal de Detalhes (Visualizar)
   const [showDeleteFunnelModal, setShowDeleteFunnelModal] = useState(false); // Modal de Confirmação (Excluir Funil)
+  const [showDeleteDealModal, setShowDeleteDealModal] = useState(false); // Modal de Confirmação (Excluir Oportunidade)
 
   // Seleções
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -300,7 +302,10 @@ export default function Deals() {
     setShowDetailsModal(true);
   };
 
-  const closeDetailsModal = () => setShowDetailsModal(false);
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setShowDeleteDealModal(false);
+  };
 
   const handleSaveDetails = async (data: DetailsFormData) => {
     if (!selectedDeal) return;
@@ -361,6 +366,24 @@ export default function Deals() {
     } catch (error: any) {
       alert(error.response?.data?.error || 'Erro ao salvar oportunidade');
       throw error;
+    }
+  };
+
+  const handleRequestDeleteDetails = () => {
+    setShowDeleteDealModal(true);
+  };
+
+  const handleDeleteDetails = async () => {
+    if (!selectedDeal) return;
+    try {
+      await deleteOpportunityService(selectedDeal.id);
+      deleteDeal(selectedDeal.id);
+      setShowDetailsModal(false);
+      setSelectedDeal(null);
+      setShowDeleteDealModal(false);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao excluir.');
     }
   };
 
@@ -665,6 +688,7 @@ export default function Deals() {
           availableUsers={users}
           onClose={closeDetailsModal}
           onSave={handleSaveDetails}
+          onRequestDelete={handleRequestDeleteDetails}
         />
       )}
 
@@ -701,6 +725,41 @@ export default function Deals() {
                 </button>
                 <button
                   onClick={handleDeleteFunnel}
+                  className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg border border-border shadow-destructive/20 cursor-pointer hover:bg-red-400"
+                >
+                  Sim, Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL CONFIRMAÇÃO EXCLUSÃO OPORTUNIDADE --- */}
+      {showDeleteDealModal && selectedDeal && (
+        <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaExclamationTriangle size={32} />
+              </div>
+              <h2 className="text-xl font-bold mb-2">Excluir Oportunidade?</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Você está prestes a excluir a oportunidade{' '}
+                <span className="font-bold text-foreground">
+                  "{selectedDeal.title}"
+                </span>
+                . Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteDealModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-border rounded-xl font-medium hover:bg-muted transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteDetails}
                   className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg border border-border shadow-destructive/20 cursor-pointer hover:bg-red-400"
                 >
                   Sim, Excluir
